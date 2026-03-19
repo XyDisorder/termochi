@@ -27,6 +27,14 @@
     "ink",
     "companion"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XyDisorder/termochi.git"
+  },
+  "homepage": "https://github.com/XyDisorder/termochi#readme",
+  "bugs": {
+    "url": "https://github.com/XyDisorder/termochi/issues"
+  },
   "author": "xydisorder",
   "license": "ISC",
   "engines": {
