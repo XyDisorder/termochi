@@ -1,0 +1,52 @@
+{
+  "name": "termochi",
+  "version": "0.1.0",
+  "description": "A cozy terminal tamagotchi companion",
+  "type": "module",
+  "bin": {
+    "termochi": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/index.ts",
+    "test": "vitest",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "keywords": [
+    "terminal",
+    "tamagotchi",
+    "cli",
+    "pet",
+    "terminal-ui",
+    "ink",
+    "companion"
+  ],
+  "author": "xydisorder",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "conf": "^15.1.0",
+    "ink": "^6.8.0",
+    "picocolors": "^1.1.1",
+    "react": "^19.2.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "eslint": "^10.0.3",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,134 @@
+import type { SpeciesId } from '../../domain/pet/pet.types.js';
+import type { MoodLabel } from '../../domain/pet/pet.types.js';
+
+export type AvatarMood = 'positive' | 'euphoric' | 'hungry' | 'tired' | 'sick';
+
+export function getMoodCategory(mood: MoodLabel): AvatarMood {
+  switch (mood) {
+    case 'euphoric': return 'euphoric';
+    case 'happy':
+    case 'calm':    return 'positive';
+    case 'tired':
+    case 'grumpy':  return 'tired';
+    case 'hungry':  return 'hungry';
+    case 'sick':    return 'sick';
+  }
+}
+
+export const SPECIES_MOOD_ASCII: Record<SpeciesId, Record<AvatarMood, string[][]>> = {
+  blob: {
+    positive: [
+      ['  ╭─────╮  ', ' │ ◕ ‿ ◕ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+      ['  ╭─────╮  ', ' │ ◡ ‿ ◡ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+    ],
+    euphoric: [
+      ['✨╭─────╮✨', ' │ ◕ ω ◕ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+      ['  ╭─────╮  ', '✨│ ≧ ‿ ≦ │✨', '  ╰──┬──╯  ', '    ╰╯     '],
+    ],
+    hungry: [
+      ['  ╭─────╮  ', ' │ ◕ ᗙ ◕ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+      ['  ╭─────╮  ', ' │ ◕ ᗜ ◕ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+    ],
+    tired: [
+      ['  ╭─────╮  ', ' │ ≧ _ ≦ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+      ['  ╭─────╮  ', ' │ ─ _ ─ │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+    ],
+    sick: [
+      ['  ╭─────╮  ', ' │ × ᵕ × │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+      ['  ╭─────╮  ', ' │ × _ × │ ', '  ╰──┬──╯  ', '    ╰╯     '],
+    ],
+  },
+  neko: {
+    positive: [
+      [' /\\_/\\   ', '( o.o )  ', ' > ^ <   ', '╱     ╲  '],
+      [' /\\_/\\   ', '( -.^ )  ', ' > ^ <   ', '╱     ╲  '],
+    ],
+    euphoric: [
+      ['✨/\\_/\\✨', '( ^ω^ )  ', ' > ♡ <   ', '╱     ╲  '],
+      [' /\\_/\\   ', '( ≧◡≦ )  ', ' > ♡ <   ', '╱     ╲  '],
+    ],
+    hungry: [
+      [' /\\_/\\   ', '( o.o )  ', ' > w <   ', '╱     ╲  '],
+      [' /\\_/\\   ', '( O.O )  ', ' > w <   ', '╱     ╲  '],
+    ],
+    tired: [
+      [' /\\_/\\   ', '( -.- )  ', ' > . <   ', '╱     ╲  '],
+      [' /\\_/\\   ', '( ─.─ )  ', ' > . <   ', '╱     ╲  '],
+    ],
+    sick: [
+      [' /\\_/\\   ', '( x.x )  ', ' > _ <   ', '╱     ╲  '],
+      [' /\\_/\\   ', '( +.+ )  ', ' > _ <   ', '╱     ╲  '],
+    ],
+  },
+  bot: {
+    positive: [
+      [' ┌──────┐ ', ' │ ◉  ◉ │ ', ' │  ──  │ ', ' └──┬───┘ ', '    │     '],
+      [' ┌──────┐ ', ' │ ◈  ◈ │ ', ' │  ──  │ ', ' └──┬───┘ ', '    │     '],
+    ],
+    euphoric: [
+      ['✨┌────┐✨', ' │ ◉  ◉ │ ', ' │  ≈≈  │ ', ' └──┬───┘ ', '    │     '],
+      [' ┌──────┐ ', '✨│ ★  ★ │✨', ' │  ≈≈  │ ', ' └──┬───┘ ', '    │     '],
+    ],
+    hungry: [
+      [' ┌──────┐ ', ' │ ◉  ◉ │ ', ' │  ??  │ ', ' └──┬───┘ ', '    │     '],
+      [' ┌──────┐ ', ' │ ◉  ◉ │ ', ' │  !?  │ ', ' └──┬───┘ ', '    │     '],
+    ],
+    tired: [
+      [' ┌──────┐ ', ' │ ─  ─ │ ', ' │  ..  │ ', ' └──┬───┘ ', '    │     '],
+      [' ┌──────┐ ', ' │ ·  · │ ', ' │  ..  │ ', ' └──┬───┘ ', '    │     '],
+    ],
+    sick: [
+      [' ┌──────┐ ', ' │ ×  × │ ', ' │  ~~  │ ', ' └──┬───┘ ', '    │     '],
+      [' ┌──────┐ ', ' │ +  + │ ', ' │  ~~  │ ', ' └──┬───┘ ', '    │     '],
+    ],
+  },
+  sprout: {
+    positive: [
+      ['   \\│/    ', ' ──╼*╾──  ', '   /│\\    ', '   ╰╯     '],
+      ['   \\│/    ', ' ──╼✿╾──  ', '   /│\\    ', '   ╰╯     '],
+    ],
+    euphoric: [
+      ['✨ \\│/ ✨ ', ' ──╼✿╾──  ', '   /│\\    ', '   ╰╯     '],
+      ['   \\│/    ', '✨──╼❀╾──✨', '   /│\\    ', '   ╰╯     '],
+    ],
+    hungry: [
+      ['   \\│/    ', ' ──╼.╾──  ', '   /│\\    ', '   ╰╯     '],
+      ['   \\│/    ', ' ──╼,╾──  ', '   /│\\    ', '   ╰╯     '],
+    ],
+    tired: [
+      ['   \\│/    ', ' ──╼~╾──  ', '   /│\\    ', '   ╰╯     '],
+      ['   \\│/    ', ' ──╼-╾──  ', '   /│\\    ', '   ╰╯     '],
+    ],
+    sick: [
+      ['   \\│/    ', ' ──╼×╾──  ', '   /│\\    ', '   ╰╯     '],
+      ['   \\│/    ', ' ──╼+╾──  ', '   /│\\    ', '   ╰╯     '],
+    ],
+  },
+};
+
+// Static preview for onboarding — positive f1 for each species
+export const SPECIES_PREVIEW: Record<SpeciesId, string[]> = {
+  blob:   SPECIES_MOOD_ASCII.blob.positive[0]!,
+  neko:   SPECIES_MOOD_ASCII.neko.positive[0]!,
+  bot:    SPECIES_MOOD_ASCII.bot.positive[0]!,
+  sprout: SPECIES_MOOD_ASCII.sprout.positive[0]!,
+};
+
+// Basic 2-frame animation using positive f1+f2, for backward compatibility
+export const SPECIES_ASCII: Record<SpeciesId, string[][]> = {
+  blob:   SPECIES_MOOD_ASCII.blob.positive,
+  neko:   SPECIES_MOOD_ASCII.neko.positive,
+  bot:    SPECIES_MOOD_ASCII.bot.positive,
+  sprout: SPECIES_MOOD_ASCII.sprout.positive,
+};
+
+export function getAsciiFrame(species: SpeciesId, frame: number): string[] {
+  const frames = SPECIES_ASCII[species];
+  const f = frames[frame % frames.length];
+  if (!f) return frames[0] ?? [];
+  return f;
+}
+
+export function getMoodAvatarFrames(species: SpeciesId, mood: AvatarMood): string[][] {
+  return SPECIES_MOOD_ASCII[species][mood];
+}
