@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 
 interface StatBarProps {
@@ -9,20 +9,38 @@ interface StatBarProps {
 }
 
 export const StatBar: React.FC<StatBarProps> = ({ label, value, color = 'green', width = 20 }) => {
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (value >= 20) return;
+    const interval = setInterval(() => {
+      setPulse((p) => !p);
+    }, 600);
+    return () => clearInterval(interval);
+  }, [value]);
+
   const filled = Math.round((value / 100) * width);
   const empty = width - filled;
   const bar = '█'.repeat(filled) + '░'.repeat(empty);
   const percentage = `${Math.round(value)}%`;
 
-  // Color shifts: red if < 25, yellow if < 50, otherwise provided color
-  const barColor = value < 25 ? 'red' : value < 50 ? 'yellow' : color;
+  // Color shifts: pulsing if < 20, red if < 25, yellow if < 50, otherwise provided color
+  const isCritical = value < 20;
 
   return (
     <Box>
       <Box width={12}>
         <Text dimColor>{label.padEnd(11)}</Text>
       </Box>
-      <Text color={barColor}>{bar}</Text>
+      {isCritical ? (
+        pulse ? (
+          <Text color="red" bold>{bar}</Text>
+        ) : (
+          <Text dimColor>{bar}</Text>
+        )
+      ) : (
+        <Text color={value < 25 ? 'red' : value < 50 ? 'yellow' : color}>{bar}</Text>
+      )}
       <Box width={5} marginLeft={1}>
         <Text dimColor>{percentage.padStart(4)}</Text>
       </Box>

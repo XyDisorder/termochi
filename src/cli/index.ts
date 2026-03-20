@@ -115,4 +115,12 @@ program
     await watchCommand({ interval: opts.interval ? parseInt(opts.interval, 10) : 5 });
   });
 
+program
+  .command('notify')
+  .description('Send a desktop notification if stats are critical (useful for cron: */30 * * * * termochi notify)')
+  .action(async () => {
+    const { notifyCommand } = await import('./commands/notify.js');
+    await notifyCommand();
+  });
+
 await program.parseAsync(process.argv);

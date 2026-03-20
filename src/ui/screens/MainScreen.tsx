@@ -234,6 +234,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
         setIsAnimating(false);
         setCurrentAction(null);
         setFlashMessage(msg || ACTION_LABELS[action]);
+        process.stdout.write('\x07');
         setTimeout(() => setFlashMessage(null), 2500);
       }, FRAME_DURATION * TOTAL_FRAMES);
     },

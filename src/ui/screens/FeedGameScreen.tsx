@@ -133,6 +133,7 @@ export const FeedGameScreen: React.FC<FeedGameScreenProps> = ({ petName, theme, 
           scoreRef.current = Math.max(0, scoreRef.current + delta);
           setScore(scoreRef.current);
           setCatchFlash(hitJunk ? 'junk' : 'food');
+          process.stdout.write('\x07');
           setTimeout(() => setCatchFlash(null), 300);
         }
 

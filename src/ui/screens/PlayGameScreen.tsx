@@ -104,6 +104,7 @@ export const PlayGameScreen: React.FC<PlayGameScreenProps> = ({ petName, theme, 
           scoreRef.current += caught.length;
           setScore(scoreRef.current);
           setCatchFlash(true);
+          process.stdout.write('\x07');
           setTimeout(() => setCatchFlash(false), 300);
         }
 
