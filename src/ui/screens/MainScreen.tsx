@@ -16,7 +16,7 @@ interface MainScreenProps {
   pet: PetState;
   theme: Theme;
   onAction: (action: PetAction, scoreBonus?: number) => string;
-  onNavigate: (screen: 'stats' | 'play-game') => void;
+  onNavigate: (screen: 'stats' | 'play-game' | 'feed-game') => void;
   initialEvent?: PetEvent | null;
 }
 
@@ -52,7 +52,7 @@ const FOOTER_ACTIONS: Array<{ key: string; action: PetAction; label: string }> =
 const ActionFooter: React.FC<{
   pet: PetState;
   theme: Theme;
-  onNavigate: (s: 'stats') => void;
+  onNavigate: (s: 'stats' | 'play-game' | 'feed-game') => void;
   onExit: () => void;
 }> = ({ pet, theme }) => (
   <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
@@ -242,7 +242,20 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
 
   useInput((input, key) => {
     if (isAnimating) return; // ignore all inputs while animating
-    if (input === 'f') triggerAction('feed');
+    if (input === 'f') {
+      // 'feed' launches mini-game — check cooldown/stat gate first
+      const check = canPerformAction(pet, 'feed');
+      if (!check.allowed) {
+        const msg =
+          check.reason === 'cooldown'
+            ? `Not yet — wait ${check.remainingMinutes}m`
+            : `Can't feed — ${check.message}`;
+        setFlashMessage(msg);
+        setTimeout(() => setFlashMessage(null), 2000);
+      } else {
+        onNavigate('feed-game');
+      }
+    }
     else if (input === 'p') {
       // 'play' launches mini-game — check cooldown/stat gate first
       const check = canPerformAction(pet, 'play');

@@ -100,10 +100,13 @@ export function applyAction(
 ): { state: PetState; message: string } {
   const base = ACTION_EFFECTS[action];
   // For 'play', scale mood effect based on mini-game score (0–10+)
+  // For 'feed', scale hunger effect based on mini-game score (0–10+)
   const effects: Partial<typeof base> =
     action === 'play' && scoreBonus !== undefined
       ? { ...base, mood: Math.min(10 + scoreBonus * 4, 50) }
-      : base;
+      : action === 'feed' && scoreBonus !== undefined
+        ? { ...base, hunger: Math.min(15 + scoreBonus * 5, 60) }
+        : base;
   const updatedStats = clampStats({
     hunger: state.stats.hunger + (effects.hunger ?? 0),
     energy: state.stats.energy + (effects.energy ?? 0),

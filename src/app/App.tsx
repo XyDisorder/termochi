@@ -10,8 +10,9 @@ import { OnboardingScreen } from '../ui/screens/OnboardingScreen.js';
 import { MainScreen } from '../ui/screens/MainScreen.js';
 import { StatsScreen } from '../ui/screens/StatsScreen.js';
 import { PlayGameScreen } from '../ui/screens/PlayGameScreen.js';
+import { FeedGameScreen } from '../ui/screens/FeedGameScreen.js';
 
-export type AppScreen = 'main' | 'stats' | 'play-game';
+export type AppScreen = 'main' | 'stats' | 'play-game' | 'feed-game';
 
 interface AppProps {
   initialPet: PetState | null;
@@ -50,6 +51,15 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     [handleAction]
   );
 
+  // Called when the feed mini-game ends — apply feed action with score bonus
+  const handleFeedComplete = useCallback(
+    (score: number) => {
+      handleAction('feed', score);
+      setScreen('main');
+    },
+    [handleAction]
+  );
+
   if (isOnboarding) {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
@@ -74,6 +84,17 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
         petName={pet.name}
         theme={theme}
         onComplete={handlePlayComplete}
+      />
+    );
+  }
+
+  if (screen === 'feed-game') {
+    return (
+      <FeedGameScreen
+        petName={pet.name}
+        theme={theme}
+        initialHunger={pet.stats.hunger}
+        onComplete={handleFeedComplete}
       />
     );
   }
