@@ -6,6 +6,7 @@ import { aiConfigStorage } from '../../infrastructure/storage/ai-config.js';
 import { sendAiMessage } from '../../infrastructure/integrations/ai-chat.js';
 import type { ChatMessage, PetContext } from '../../infrastructure/integrations/ai-chat.js';
 import { memoryStorage } from '../../infrastructure/storage/memory-storage.js';
+import { todoStorage } from '../../infrastructure/storage/todo-storage.js';
 import { getMoodLabel } from '../../domain/pet/pet.logic.js';
 import { Panel } from '../components/Panel.js';
 import { FooterHelp } from '../components/FooterHelp.js';
@@ -88,6 +89,14 @@ export const AiChatScreen: React.FC<AiChatScreenProps> = ({
     if (text === '/forget') {
       memoryStorage.clear();
       setMessages((prev) => [...prev, { from: 'pet', text: `Done — I've cleared everything I knew about you.` }]);
+      return;
+    }
+    if (text.startsWith('/todo ')) {
+      const task = text.slice('/todo '.length).trim();
+      if (task) {
+        todoStorage.add(task);
+        setMessages((prev) => [...prev, { from: 'pet', text: `Added to your todos: "${task}" ✓` }]);
+      }
       return;
     }
 
@@ -199,6 +208,7 @@ export const AiChatScreen: React.FC<AiChatScreenProps> = ({
         hints={[
           { key: '↵', label: 'send' },
           { key: '/remember …', label: 'save memory' },
+          { key: '/todo …', label: 'add todo' },
           { key: '/forget', label: 'clear memories' },
           { key: 'esc', label: 'back' },
         ]}

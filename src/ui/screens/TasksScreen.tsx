@@ -4,6 +4,8 @@ import { Box, Text, useInput } from 'ink';
 import type { Theme } from '../../domain/theme/theme.types.js';
 import type { TaskStressLevel } from '../../domain/pet/pet.logic.js';
 import { integrationsConfigStorage } from '../../infrastructure/storage/integrations-config.js';
+import { todoStorage } from '../../infrastructure/storage/todo-storage.js';
+import type { TodoItem } from '../../infrastructure/storage/todo-storage.js';
 import { fetchGitHubData } from '../../infrastructure/integrations/github.js';
 import type { GitHubData, GitHubPR, GitHubIssue } from '../../infrastructure/integrations/github.js';
 import { fetchLinearData, priorityLabel } from '../../infrastructure/integrations/linear.js';
@@ -125,11 +127,14 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
   const tabs = [
     ...(hasGitHub ? ['github' as const] : []),
     ...(hasLinear ? ['linear' as const] : []),
+    'todo' as const,
   ];
 
   const [activeTabIdx, setActiveTabIdx] = useState(0);
   const [cursorGH, setCursorGH] = useState(0);
   const [cursorLinear, setCursorLinear] = useState(0);
+  const [cursorTodo, setCursorTodo] = useState(0);
+  const [todos, setTodos] = useState<TodoItem[]>(() => todoStorage.readAll());
   const [flash, setFlash] = useState<string | null>(null);
 
   const [github, setGitHub] = useState<LoadState<GitHubData>>({
@@ -184,12 +189,21 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
     }
   }, [github, linear]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeTab = tabs[activeTabIdx] ?? 'github';
+  const activeTab = tabs[activeTabIdx] ?? 'todo';
 
   const ghRows =
     github.status === 'ok' ? buildGHRows(github.data) : [];
   const linearRows =
     linear.status === 'ok' ? buildLinearRows(linear.data) : [];
+
+  // Reload todos whenever switching to the todo tab
+  const prevTabRef = React.useRef(activeTabIdx);
+  useEffect(() => {
+    if (prevTabRef.current !== activeTabIdx && tabs[activeTabIdx] === 'todo') {
+      setTodos(todoStorage.readAll());
+    }
+    prevTabRef.current = activeTabIdx;
+  }, [activeTabIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useInput((input, key) => {
     if (key.tab || input === '\t') {
@@ -199,6 +213,32 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
     // Number keys to jump to tab
     if (input === '1' && tabs.length >= 1) { setActiveTabIdx(0); return; }
     if (input === '2' && tabs.length >= 2) { setActiveTabIdx(1); return; }
+    if (input === '3' && tabs.length >= 3) { setActiveTabIdx(2); return; }
+
+    if (activeTab === 'todo') {
+      if (key.upArrow) {
+        setCursorTodo((c) => Math.max(0, c - 1));
+      } else if (key.downArrow) {
+        setCursorTodo((c) => Math.min(todos.length - 1, c + 1));
+      } else if (input === ' ' || key.return) {
+        const item = todos[cursorTodo];
+        if (item) {
+          todoStorage.toggle(item.id);
+          setTodos(todoStorage.readAll());
+        }
+      } else if (input === 'd') {
+        const item = todos[cursorTodo];
+        if (item) {
+          todoStorage.delete(item.id);
+          const updated = todoStorage.readAll();
+          setTodos(updated);
+          setCursorTodo((c) => Math.min(c, Math.max(0, updated.length - 1)));
+        }
+      } else if (input === 'q' || key.escape) {
+        onBack();
+      }
+      return;
+    }
 
     if (key.return) {
       const url = activeTab === 'github'
@@ -224,28 +264,6 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
     }
   });
 
-  if (!hasAny) {
-    return (
-      <Box flexDirection="column" paddingX={2} paddingY={1}>
-        <Panel title="Tasks" borderColor={theme.accent}>
-          <Text dimColor>No integrations configured.</Text>
-          <Box marginTop={1}>
-            <Text dimColor>Press </Text>
-            <Text color={theme.accent} bold>[,]</Text>
-            <Text dimColor> to open Settings and add your GitHub token or Linear API key.</Text>
-          </Box>
-        </Panel>
-        <FooterHelp
-          hints={[
-            { key: ',', label: 'settings' },
-            { key: 'q/esc', label: 'back' },
-          ]}
-          borderColor={theme.border}
-        />
-      </Box>
-    );
-  }
-
   const stalePRCount =
     github.status === 'ok'
       ? github.data.openPRs.filter((pr) => pr.openHours >= 48).length
@@ -267,15 +285,14 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
       <Box gap={0} marginBottom={1}>
         {tabs.map((tab, i) => {
           const isActive = i === activeTabIdx;
+          const pendingTodos = todos.filter((t) => !t.done).length;
           const count =
             tab === 'github'
-              ? totalGH !== null
-                ? ` (${totalGH})`
-                : ''
-              : totalLinear !== null
-                ? ` (${totalLinear})`
-                : '';
-          const label = tab === 'github' ? 'GitHub' : 'Linear';
+              ? totalGH !== null ? ` (${totalGH})` : ''
+              : tab === 'linear'
+                ? totalLinear !== null ? ` (${totalLinear})` : ''
+                : todos.length > 0 ? ` (${pendingTodos}/${todos.length})` : '';
+          const label = tab === 'github' ? 'GitHub' : tab === 'linear' ? 'Linear' : 'Todo';
           const staleTag = tab === 'github' && stalePRCount > 0 ? ` ⚠${stalePRCount}` : '';
           return (
             <Box
@@ -293,9 +310,13 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
         })}
       </Box>
 
-      <Panel title={activeTab === 'github' ? 'GitHub' : 'Linear'} borderColor={theme.accent}>
+      <Panel
+        title={activeTab === 'github' ? 'GitHub' : activeTab === 'linear' ? 'Linear' : 'Todo'}
+        borderColor={theme.accent}
+      >
         {activeTab === 'github' && <GitHubPane github={github} rows={ghRows} cursor={cursorGH} theme={theme} />}
         {activeTab === 'linear' && <LinearPane linear={linear} rows={linearRows} cursor={cursorLinear} theme={theme} />}
+        {activeTab === 'todo' && <TodoPane todos={todos} cursor={cursorTodo} theme={theme} />}
       </Panel>
 
       {/* URL / flash status line */}
@@ -307,6 +328,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
             </Box>
           );
         }
+        if (activeTab === 'todo') return null;
         const url = activeTab === 'github'
           ? getSelectedUrl(ghRows, cursorGH)
           : getSelectedUrl(linearRows, cursorLinear);
@@ -324,9 +346,12 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
       <FooterHelp
         hints={[
           { key: '↑↓', label: 'navigate' },
-          { key: '↵', label: 'open' },
-          ...(tabs.length > 1 ? [{ key: 'tab/1-2', label: 'switch' }] : []),
-          { key: 'r', label: 'refresh' },
+          ...(activeTab === 'todo'
+            ? [{ key: 'space/↵', label: 'toggle' }, { key: 'd', label: 'delete' }]
+            : [{ key: '↵', label: 'open' }]
+          ),
+          ...(tabs.length > 1 ? [{ key: `tab/1-${tabs.length}`, label: 'switch' }] : []),
+          ...(activeTab !== 'todo' ? [{ key: 'r', label: 'refresh' }] : []),
           { key: ',', label: 'settings' },
           { key: 'q/esc', label: 'back' },
         ]}
@@ -474,6 +499,59 @@ const IssueRow: React.FC<{
       </Text>
     </Box>
     <Text dimColor>   {issue.repository}</Text>
+  </Box>
+);
+
+// ── Todo pane ─────────────────────────────────────────────────────────────────
+
+const TodoPane: React.FC<{
+  todos: TodoItem[];
+  cursor: number;
+  theme: Theme;
+}> = ({ todos, cursor, theme }) => {
+  if (todos.length === 0) {
+    return (
+      <Box flexDirection="column" gap={1}>
+        <Text dimColor>No todos yet.</Text>
+        <Box gap={1}>
+          <Text dimColor>Add one from chat with</Text>
+          <Text color={theme.accent}>/todo &lt;text&gt;</Text>
+        </Box>
+      </Box>
+    );
+  }
+  const pending = todos.filter((t) => !t.done);
+  const done = todos.filter((t) => t.done);
+  return (
+    <Box flexDirection="column">
+      {pending.map((item) => (
+        <TodoRow key={item.id} item={item} selected={todos.indexOf(item) === cursor} theme={theme} />
+      ))}
+      {done.length > 0 && (
+        <Box flexDirection="column" marginTop={pending.length > 0 ? 1 : 0}>
+          <Text color={theme.accent} bold>── Done ({done.length})</Text>
+          {done.map((item) => (
+            <TodoRow key={item.id} item={item} selected={todos.indexOf(item) === cursor} theme={theme} />
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+const TodoRow: React.FC<{
+  item: TodoItem;
+  selected: boolean;
+  theme: Theme;
+}> = ({ item, selected, theme }) => (
+  <Box gap={1} marginLeft={2}>
+    <Text {...(selected ? { color: theme.accent } : { dimColor: true })}>›</Text>
+    <Text {...(item.done ? { dimColor: true } : { color: theme.primary })}>
+      {item.done ? '[x]' : '[ ]'}
+    </Text>
+    <Text {...(selected ? { color: theme.primary, bold: true } : item.done ? { dimColor: true } : {})}>
+      {item.text}
+    </Text>
   </Box>
 );
 
