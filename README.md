@@ -1,13 +1,13 @@
 <div align="center">
 
-![termochi preview](https://raw.githubusercontent.com/XyDisorder/termochi/main/assets/preview.png)
+![termochi demo](https://raw.githubusercontent.com/XyDisorder/termochi/main/assets/demo.gif)
 
 # termochi 🌸
 
-**A cozy terminal tamagotchi you install with npm.**
+**A tamagotchi for developers. Lives in your terminal. Knows your GitHub. Has feelings.**
 
-Adopt a companion, name them, choose their personality — and care for them directly from your shell.
-They live in your terminal. They remember you. They have feelings.
+Adopt a companion, name them, care for them from your shell.
+They track your PRs, remember your todos, chat with you via AI — and get sad if you neglect them.
 
 [![npm version](https://img.shields.io/npm/v/termochi?color=pink&style=flat-square)](https://npmjs.com/package/termochi)
 [![license](https://img.shields.io/npm/l/termochi?color=lavender&style=flat-square)](./LICENSE)
