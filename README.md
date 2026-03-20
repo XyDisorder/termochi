@@ -1,6 +1,6 @@
 <div align="center">
 
-![termochi demo](https://raw.githubusercontent.com/XyDisorder/termochi/main/assets/demo.gif)
+![termochi preview](https://raw.githubusercontent.com/XyDisorder/termochi/main/assets/preview.png)
 
 # termochi 🌸
 
