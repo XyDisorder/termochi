@@ -123,4 +123,20 @@ program
     await notifyCommand();
   });
 
+program
+  .command('commit')
+  .description("Ask your companion to summarize today's git commits")
+  .action(async () => {
+    const { commitDigestCommand } = await import('./commands/commit-digest.js');
+    await commitDigestCommand();
+  });
+
+program
+  .command('notify-prs')
+  .description('Notify if any open PR has had no activity for 48h (cron: 0 9 * * * termochi notify-prs)')
+  .action(async () => {
+    const { notifyPrsCommand } = await import('./commands/notify-prs.js');
+    await notifyPrsCommand();
+  });
+
 await program.parseAsync(process.argv);

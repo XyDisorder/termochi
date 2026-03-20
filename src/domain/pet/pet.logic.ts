@@ -69,6 +69,17 @@ export function applyTimeDegradation(state: PetState, elapsedMinutes: number): P
   };
 }
 
+export type TaskStressLevel = 'none' | 'low' | 'high';
+
+export function applyTaskStress(state: PetState, level: TaskStressLevel): PetState {
+  if (level === 'none') return state;
+  const moodDrop = level === 'high' ? 12 : 6;
+  return {
+    ...state,
+    stats: clampStats({ ...state.stats, mood: state.stats.mood - moodDrop }),
+  };
+}
+
 export function canPerformAction(state: PetState, action: PetAction): ActionCheck {
   // Stat gate check
   const gateMessage = ACTION_STAT_GATES[action](state.stats);

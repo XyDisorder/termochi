@@ -6,6 +6,7 @@ import { getMoodLabel, getMoodMessage } from '../../domain/pet/pet.logic.js';
 import { formatAge } from '../../utils/formatters.js';
 import { formatElapsedTime } from '../../infrastructure/clock/clock.js';
 import { SPECIES_CATALOG } from '../../domain/species/species.catalog.js';
+import { getEvolutionInfo } from '../../domain/pet/evolution.js';
 import { StatBar } from '../components/StatBar.js';
 import { Panel } from '../components/Panel.js';
 import { PetAvatar } from '../components/PetAvatar.js';
@@ -44,6 +45,7 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ pet, onBack, theme }) 
 
   const gameModeLabel =
     pet.gameMode === 'cozy' ? 'Cozy' : pet.gameMode === 'normal' ? 'Normal' : 'Hardcore';
+  const evo = getEvolutionInfo(pet.createdAt);
 
   return (
     <Box flexDirection="column" paddingX={2} paddingY={1}>
@@ -105,6 +107,18 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ pet, onBack, theme }) 
               <Text dimColor>Theme:</Text>
               <Text color={theme.primary}>{theme.emoji} {theme.name}</Text>
             </Box>
+          </Box>
+          <Box gap={3} flexWrap="wrap" marginTop={0}>
+            <Box gap={1}>
+              <Text dimColor>Stage:</Text>
+              <Text color={theme.accent}>{evo.badge} {evo.label} · day {evo.days}</Text>
+            </Box>
+            {evo.nextAt !== null && (
+              <Box gap={1}>
+                <Text dimColor>Next evolution:</Text>
+                <Text color={theme.primary}>{evo.nextAt}d</Text>
+              </Box>
+            )}
           </Box>
         </Box>
       </Panel>

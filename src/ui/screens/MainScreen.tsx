@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
+import type { GitHubWidgetData } from '../../app/App.js';
 import type { ActionCheck, PetAction, PetState, PetStats } from '../../domain/pet/pet.types.js';
 import type { Theme } from '../../domain/theme/theme.types.js';
 import type { PetEvent } from '../../domain/events/random-events.js';
@@ -7,6 +8,7 @@ import { canPerformAction, getMoodLabel, getMoodMessage } from '../../domain/pet
 import { formatAge } from '../../utils/formatters.js';
 import { formatElapsedTime } from '../../infrastructure/clock/clock.js';
 import { SPECIES_CATALOG } from '../../domain/species/species.catalog.js';
+import { getEvolutionInfo } from '../../domain/pet/evolution.js';
 import { lerp } from '../../utils/math.js';
 import { StatBar } from '../components/StatBar.js';
 import { PetAvatar } from '../components/PetAvatar.js';
@@ -16,8 +18,11 @@ interface MainScreenProps {
   pet: PetState;
   theme: Theme;
   onAction: (action: PetAction, scoreBonus?: number) => string;
-  onNavigate: (screen: 'stats' | 'play-game' | 'feed-game') => void;
+  onNavigate: (screen: 'stats' | 'play-game' | 'feed-game' | 'settings' | 'tasks' | 'ai-chat') => void;
   initialEvent?: PetEvent | null;
+  githubSummary?: GitHubWidgetData | null;
+  githubWidgetVisible?: boolean;
+  onToggleGithubWidget?: () => void;
 }
 
 const ACTION_LABELS: Record<PetAction, string> = {
@@ -46,15 +51,16 @@ const FOOTER_ACTIONS: Array<{ key: string; action: PetAction; label: string }> =
   { key: 's', action: 'sleep', label: 'Sleep' },
   { key: 'c', action: 'clean', label: 'Clean' },
   { key: 'h', action: 'heal',  label: 'Heal'  },
-  { key: 't', action: 'talk',  label: 'Talk'  },
 ];
 
 const ActionFooter: React.FC<{
   pet: PetState;
   theme: Theme;
-  onNavigate: (s: 'stats' | 'play-game' | 'feed-game') => void;
+  onNavigate: (s: 'stats' | 'play-game' | 'feed-game' | 'settings' | 'tasks' | 'ai-chat') => void;
   onExit: () => void;
-}> = ({ pet, theme }) => (
+  githubConfigured?: boolean;
+  githubWidgetVisible?: boolean;
+}> = ({ pet, theme, githubConfigured, githubWidgetVisible }) => (
   <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
     {FOOTER_ACTIONS.map(({ key, action, label }) => {
       const check: ActionCheck = canPerformAction(pet, action);
@@ -79,8 +85,26 @@ const ActionFooter: React.FC<{
       );
     })}
     <Box gap={1}>
+      <Text color={theme.border} bold>[a]</Text>
+      <Text>Chat</Text>
+    </Box>
+    <Box gap={1}>
+      <Text color={theme.border} bold>[t]</Text>
+      <Text>Tasks</Text>
+    </Box>
+    {githubConfigured && (
+      <Box gap={1}>
+        <Text color={theme.border} bold>[g]</Text>
+        <Text>{githubWidgetVisible ? 'hide GH' : 'GitHub'}</Text>
+      </Box>
+    )}
+    <Box gap={1}>
       <Text color={theme.border} bold>[i]</Text>
       <Text>Stats</Text>
+    </Box>
+    <Box gap={1}>
+      <Text color={theme.border} bold>[,]</Text>
+      <Text>Settings</Text>
     </Box>
     <Box gap={1}>
       <Text color={theme.border} bold>[q]</Text>
@@ -144,7 +168,7 @@ const TOTAL_FRAMES = 5;
 const STAT_ANIM_DURATION = 900;
 const STAT_ANIM_STEPS = 30;
 
-export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget }) => {
   const { exit } = useApp();
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -274,7 +298,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
     else if (input === 's') triggerAction('sleep');
     else if (input === 'c') triggerAction('clean');
     else if (input === 'h') triggerAction('heal');
-    else if (input === 't') triggerAction('talk');
+    else if (input === 'a') onNavigate('ai-chat');
+    else if (input === 't') onNavigate('tasks');
+    else if (input === 'g' && onToggleGithubWidget) onToggleGithubWidget();
+    else if (input === ',') onNavigate('settings');
     else if (input === 'i') onNavigate('stats');
     else if (input === 'q' || key.escape) exit();
   });
@@ -286,6 +313,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
   const lastSeen = formatElapsedTime(pet.lastSeenAt);
   const speciesInfo = SPECIES_CATALOG.find((s) => s.id === pet.species);
   const speciesName = speciesInfo?.name ?? pet.species;
+  const evo = getEvolutionInfo(pet.createdAt);
 
   // Current animation frame content
   const frames = currentAction ? ACTION_ANIM_FRAMES[currentAction] : null;
@@ -317,6 +345,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
           <Text color={theme.accent}>
             {moodEmoji} {moodLabel}
           </Text>
+          <Text dimColor>·</Text>
+          <Text color={theme.primary}>{evo.badge} {evo.label}</Text>
         </Box>
 
         {/* Avatar + stats */}
@@ -384,12 +414,34 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
             <Text color={theme.accent}>{lastSeen}</Text>
           </Box>
         </Box>
+
+        {/* GitHub compact widget */}
+        {githubWidgetVisible && githubSummary && (
+          <Box marginTop={1} gap={2} flexWrap="wrap">
+            <Text dimColor>GH</Text>
+            <Text color="green">✓ {githubSummary.mergedCount} merged</Text>
+            <Text color={theme.primary}>● {githubSummary.openCount} open</Text>
+            {githubSummary.reviewCount > 0 && (
+              <Text color={theme.accent}>⊙ {githubSummary.reviewCount} review</Text>
+            )}
+            {githubSummary.staleCount > 0 && (
+              <Text color="red">⚠ {githubSummary.staleCount} stuck</Text>
+            )}
+          </Box>
+        )}
       </Box>
 
       {isAnimating ? (
         <FooterHelp hints={[{ key: '...', label: 'animating' }]} borderColor={theme.border} />
       ) : (
-        <ActionFooter pet={pet} theme={theme} onNavigate={onNavigate} onExit={exit} />
+        <ActionFooter
+          pet={pet}
+          theme={theme}
+          onNavigate={onNavigate}
+          onExit={exit}
+          githubConfigured={!!onToggleGithubWidget}
+          githubWidgetVisible={githubWidgetVisible ?? false}
+        />
       )}
     </Box>
   );
