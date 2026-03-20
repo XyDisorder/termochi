@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import type { PetState, PetAction } from '../domain/pet/pet.types.js';
 import type { PetEvent } from '../domain/events/random-events.js';
-import { applyAction } from '../domain/pet/pet.logic.js';
+import { applyAction, applyTimeDegradation } from '../domain/pet/pet.logic.js';
 import { storage } from '../infrastructure/storage/storage.js';
 import { getTheme } from '../domain/theme/theme.catalog.js';
-import { nowISO } from '../infrastructure/clock/clock.js';
+import { getElapsedMinutes, nowISO } from '../infrastructure/clock/clock.js';
 import { OnboardingScreen } from '../ui/screens/OnboardingScreen.js';
 import { MainScreen } from '../ui/screens/MainScreen.js';
 import { StatsScreen } from '../ui/screens/StatsScreen.js';
@@ -41,6 +41,22 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     },
     [pet]
   );
+
+  // Live degradation — recalcule les stats toutes les 30 secondes pendant que l'app tourne
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPet((prev) => {
+        if (!prev) return prev;
+        const elapsed = getElapsedMinutes(prev.lastSeenAt);
+        if (elapsed < 0.1) return prev; // moins de 6 secondes, on skip
+        const degraded = applyTimeDegradation(prev, elapsed);
+        const updated = { ...degraded, lastSeenAt: nowISO() };
+        storage.write(updated);
+        return updated;
+      });
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Called when the play mini-game ends — apply play action with score bonus
   const handlePlayComplete = useCallback(
