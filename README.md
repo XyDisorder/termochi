@@ -2,7 +2,7 @@
 
 ```
   ╭─────╮
- │ ◕ ‿ ◕ │    termochi
+  │ ^_^ │   termochi
   ╰──┬──╯
     ╰╯
 ```
@@ -28,30 +28,33 @@ Termochi is a **virtual pet that lives in your terminal**. It's not a toy demo �
 
 - Stats that degrade over time (based on how long you're away)
 - Actions with cooldowns — you can't just spam feed
-- A **playable mini-game** when you want to play
+- A **playable mini-game** when you want to play or feed
 - **Mood-reactive avatars** — your pet's face changes when they're sick, hungry, grumpy, or euphoric
 - **Random events** that happen while you're gone (nightmares, found snacks, made friends...)
 - **Shell prompt integration** and a **tmux watch mode** so your pet is always visible
+- **AI companion chat** — talk to your companion powered by Claude or OpenAI
+- **GitHub & Linear integration** — your work tasks and PR load affect your companion's mood
+- **Evolution stages** — your companion grows over time as you spend days together
 
 ---
 
 ## Preview
 
 ```
-╭─── Termochi ────────────────────────────────────────╮
-│  Mochi  ·  Blob  ·  🤩 euphoric                     │
-│                                                      │
-│  ✨╭─────╮✨         Hunger      ████████░░  82%    │
-│   │ ◕ ω ◕ │          Energy      ██████████ 100%    │
-│    ╰──┬──╯           Mood        █████████░  91%    │
-│       ╰╯             Cleanliness ████████░░  80%    │
-│                      Health      ██████████ 100%    │
-│  Mochi is absolutely thriving!                      │
-│                                                     │
-│  Age: 3 days old  ·  Last seen: 2 minutes ago       │
-╰─────────────────────────────────────────────────────╯
+╭─── Termochi · Mochi · Blob · 🤩 euphoric · 🌱 Young ───────╮
+│                                                              │
+│  ✨╭─────╮✨         Hunger      ████████░░  82%            │
+│   │ ◕ ω ◕ │          Energy      ██████████ 100%            │
+│    ╰──┬──╯           Mood        █████████░  91%            │
+│       ╰╯             Cleanliness ████████░░  80%            │
+│                      Health      ██████████ 100%            │
+│  Mochi is absolutely thriving!                              │
+│                                                             │
+│  Age: 12 days old  ·  Last seen: 2 minutes ago              │
+│  GH  ✓ 3 merged  ● 5 open  ⚠ 2 stuck                       │
+╰─────────────────────────────────────────────────────────────╯
 
-[f] Feed  [p] Play  [s] Sleep (not tired yet)  [c] Clean  [h] Heal (healthy)  [t] Talk  [i] Stats  [q] Quit
+[f] Feed  [p] Play  [s] Sleep  [c] Clean  [h] Heal  [a] Chat  [t] Tasks  [g] hide GH  [i] Stats  [,] Settings  [q] Quit
 ```
 
 > The footer shows **live action availability** — cooldowns and stat blocks update in real time.
@@ -119,6 +122,22 @@ Chosen during onboarding. Each mode shows a **concrete example** of what changes
 
 ---
 
+## Evolution Stages
+
+Your companion evolves as you spend time together. Their badge updates in the header.
+
+| Stage | Badge | Unlocks at |
+|-------|-------|------------|
+| Egg | 🥚 | Day 0 |
+| Baby | 🐣 | Day 1 |
+| Young | 🌱 | Day 7 |
+| Adult | ✦ | Day 30 |
+| Veteran | ★ | Day 90 |
+
+The Stats screen shows the current stage, days alive, and days until next evolution.
+
+---
+
 ## Actions
 
 All actions have **cooldowns** and **stat gates** — no infinite feeding.
@@ -130,7 +149,6 @@ All actions have **cooldowns** and **stat gates** — no infinite feeding.
 | `s` | Sleep | 2 hours | Energy ≥ 88% ("not tired yet") |
 | `c` | Clean | 90 min | Cleanliness ≥ 88% ("already clean") |
 | `h` | Heal | 3 hours | Health ≥ 88% ("already healthy") |
-| `t` | Talk | 5 min | — always available |
 
 ---
 
@@ -159,6 +177,101 @@ When you press `p` to play (and your pet has energy), a real mini-game launches:
 
 ---
 
+## 💬 AI Companion Chat
+
+Press `a` to open a chat with your companion, powered by Claude or OpenAI.
+
+Your companion **never breaks character** — they respond as themselves, with full awareness of their current mood, species, and stats. But they're also genuinely helpful: ask for code help, ideas, or just have a conversation.
+
+```
+╭─── Chat with Mochi ──────────────────────────────╮
+│                                                   │
+│  Mochi  Heyyyy! I'm feeling pretty good today ~  │
+│         My hunger's at 82% but I'm managing :3   │
+│                                                   │
+│  You   can you help me write a git commit message │
+│                                                   │
+│  Mochi  Sure! What did you change? Tell me and   │
+│         I'll write something good for you ✦      │
+│                                                   │
+╰───────────────────────────────────────────────────╯
+  > _
+  /remember …   /forget   esc back
+```
+
+### Persistent Memory
+
+Your companion remembers things across sessions:
+
+```
+/remember I prefer TypeScript over Python
+/remember my project is called termochi
+/forget        ← clears all memories
+```
+
+Memories are injected into every conversation — your companion won't ask the same questions twice.
+
+Talking to your companion applies the Talk action, boosting mood.
+
+### Setup
+
+Go to Settings (`,`) → configure your AI provider and API key.
+Supported: **Claude** (Anthropic) and **OpenAI** (GPT-4o and friends).
+
+---
+
+## 📋 Tasks & Integrations
+
+Press `t` to open the Tasks view. Connect GitHub and/or Linear to see your work items in one place.
+
+```
+╭─── Tasks ──────────────────────────────────────────╮
+│  [1] GitHub (5) ⚠2    [2] Linear (3)               │
+│                                                     │
+│  ✓ 3 merged  ●  5 open  ⚠ 2 stuck (>2d open)      │
+│  ─────────────────────────────────────────────────  │
+│  ● fix: auth token expiry         xydisorder/app    │
+│  ● feat: dark mode toggle         xydisorder/app    │
+│  ● ⚠ fix: race condition          xydisorder/api  2d│
+│  ● ⚠ chore: update deps           xydisorder/api  3d│
+│  ⊙ review: add pagination         colleague/app    │
+│                                                     │
+│  https://github.com/…/pull/42                       │
+╰─────────────────────────────────────────────────────╯
+  ↑↓ navigate   ↵ open in browser   1/2/tab switch   esc back
+```
+
+- `↑` `↓` to navigate, `↵` to open in browser
+- `1` / `2` / `tab` to switch between GitHub and Linear
+- PRs open for more than 2 days are flagged with `⚠` and a red border
+- Reviews requested are shown with `⊙`
+
+### Mood impact
+
+Your companion reacts to your workload:
+
+- 5+ PRs awaiting your review, or urgent Linear issues → mood malus applied
+
+### GitHub widget on main screen
+
+Press `g` on the main screen to toggle a compact GitHub summary:
+
+```
+GH  ✓ 3 merged  ● 5 open  ⊙ 2 review  ⚠ 1 stuck
+```
+
+Visibility preference is saved automatically.
+
+### Setup
+
+Go to Settings (`,`) and enter:
+- **GitHub token** — personal access token with `repo` + `read:user` scope
+- **Linear API key** — from your Linear settings → API
+
+API keys are stored locally at `~/.termochi/integrations.json` (same approach as `gh`, `aws`, `npm`).
+
+---
+
 ## Mood-Reactive Faces
 
 Your companion's face changes based on their current mood:
@@ -170,7 +283,7 @@ euphoric    happy/calm   tired        hungry       sick
   ╰──┬──╯    ╰──┬──╯     ╰──┬──╯     ╰──┬──╯     ╰──┬──╯
 ```
 
-Stat bars also **animate smoothly** when they change — no sudden jumps.
+Critical stat bars pulse red. Stat bars **animate smoothly** when they change.
 
 ---
 
@@ -254,6 +367,29 @@ termochi prompt       # One-line status for shell prompt
 termochi prompt --compact   # Extra-short for tmux statusline
 termochi watch        # Live compact view for tmux pane
 termochi watch --interval 2  # Custom refresh interval (minutes)
+termochi commit       # AI-generated summary of today's git commits
+termochi notify-prs   # Send a desktop notification if any PRs are stuck (>48h)
+```
+
+### `termochi commit`
+
+Summarizes today's git commits using your AI companion:
+
+```bash
+termochi commit
+# → Mochi: You fixed the auth flow and added dark mode today —
+#          solid progress! The race condition fix especially 🌟
+```
+
+Useful as a daily standup helper or end-of-day recap. Requires AI configured in Settings.
+
+### `termochi notify-prs`
+
+Checks GitHub for open PRs with no activity for 48+ hours and sends a macOS desktop notification. Silent if nothing is stuck. Designed to run as a cron job:
+
+```bash
+# ~/Library/LaunchAgents or crontab
+0 9 * * * termochi notify-prs
 ```
 
 ---
@@ -263,11 +399,26 @@ termochi watch --interval 2  # Custom refresh interval (minutes)
 Termochi uses **real elapsed time** — not sessions. Close your terminal, come back tomorrow: your companion's stats will have degraded based on exactly how many hours passed, scaled by your game mode.
 
 - Stats degrade per hour: hunger, energy, mood, cleanliness, health
+- Stats also degrade live every 30 seconds while the app is open
 - Critical stats (< 20%) cause extra health damage over time
+- Critical stat bars **pulse red** and trigger a beep sound
 - Long absences may trigger a random event on your next login
 - No permadeath — your companion gets sad and neglected, but never disappears
 
 State is stored locally at `~/.termochi/state.json`.
+
+---
+
+## Local storage
+
+All data lives in `~/.termochi/`:
+
+| File | Contents |
+|------|----------|
+| `state.json` | Pet state (stats, name, species, timestamps) |
+| `ai-config.json` | AI provider + API key |
+| `integrations.json` | GitHub token, Linear key, widget preferences |
+| `memory.json` | Companion memories from `/remember` |
 
 ---
 
@@ -278,7 +429,7 @@ git clone <repo> && cd termochi
 npm install
 npm run dev       # Run directly with tsx (no build step)
 npm run build     # Compile TypeScript → dist/
-npm test          # Run 47 unit tests
+npm test          # Run unit tests
 npm run lint      # ESLint
 npm run format    # Prettier
 ```
@@ -301,31 +452,33 @@ src/
   cli/            CLI entry + all commands
   app/            Top-level React component + screen router
   domain/         Pure business logic
-    pet/          Stats, actions, degradation, mood
+    pet/          Stats, actions, degradation, mood, evolution
     species/      Species catalog (Blob, Neko, Bot, Sprout)
     game/         Game mode configs
     theme/        Theme catalog
     events/       Random event system
   infrastructure/
-    storage/      JSON persistence + Zod validation
+    storage/      JSON persistence (state, AI config, integrations, memory)
     clock/        Time utilities
+    integrations/ GitHub API, Linear API, AI chat
   ui/
     screens/      Full-page Ink screens
     components/   Reusable Ink components
     ascii/        Mood-reactive ASCII art per species
   utils/          Math, formatters, terminal helpers
-tests/            47 Vitest unit tests
 ```
 
 ---
 
 ## Roadmap
 
-- [ ] Evolution stages (baby → juvenile → adult art)
+- [x] Evolution stages (egg → baby → young → adult → veteran)
+- [x] macOS desktop notifications when PRs are stuck
+- [x] AI companion chat with persistent memory
+- [x] GitHub & Linear integration with mood impact
 - [ ] Second mini-game
 - [ ] Multiple companions
 - [ ] Companion export / sharing as ASCII card
-- [ ] macOS/Linux desktop notifications when pet is neglected
 - [ ] `termochi export` — snapshot as shareable JSON or image
 
 ---
