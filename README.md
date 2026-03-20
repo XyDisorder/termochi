@@ -1,11 +1,6 @@
 <div align="center">
 
-```
-  ╭─────╮
-  │ ^_^ │   termochi
-  ╰──┬──╯
-    ╰╯
-```
+![termochi preview](assets/preview.png)
 
 # termochi 🌸
 
