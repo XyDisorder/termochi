@@ -139,4 +139,12 @@ program
     await notifyPrsCommand();
   });
 
+program
+  .command('notify-meetings')
+  .description('Send a desktop notification for upcoming meetings (cron: * * * * * termochi notify-meetings)')
+  .action(async () => {
+    const { notifyMeetingsCommand } = await import('./commands/notify-meetings.js');
+    await notifyMeetingsCommand();
+  });
+
 await program.parseAsync(process.argv);

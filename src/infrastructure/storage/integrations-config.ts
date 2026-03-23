@@ -13,9 +13,14 @@ export interface LinearConfig {
   apiKey: string;
 }
 
+export interface CalendarConfig {
+  icsUrl: string;
+}
+
 export interface IntegrationsConfig {
   github?: GitHubConfig;
   linear?: LinearConfig;
+  calendar?: CalendarConfig;
   githubWidget?: boolean;
 }
 
@@ -43,6 +48,12 @@ export const integrationsConfigStorage = {
         const lin = obj['linear'] as Record<string, unknown>;
         if (typeof lin['apiKey'] === 'string') {
           result.linear = { apiKey: lin['apiKey'] };
+        }
+      }
+      if (typeof obj['calendar'] === 'object' && obj['calendar'] !== null) {
+        const cal = obj['calendar'] as Record<string, unknown>;
+        if (typeof cal['icsUrl'] === 'string') {
+          result.calendar = { icsUrl: cal['icsUrl'] };
         }
       }
       if (typeof obj['githubWidget'] === 'boolean') {

@@ -13,15 +13,16 @@ interface SettingsScreenProps {
   onBack: () => void;
 }
 
-type Field = 'ai-provider' | 'ai-key' | 'github-token' | 'linear-key';
+type Field = 'ai-provider' | 'ai-key' | 'github-token' | 'linear-key' | 'calendar-url';
 
-const FIELDS: Field[] = ['ai-provider', 'ai-key', 'github-token', 'linear-key'];
+const FIELDS: Field[] = ['ai-provider', 'ai-key', 'github-token', 'linear-key', 'calendar-url'];
 
 const FIELD_LABELS: Record<Field, string> = {
   'ai-provider': 'AI Provider',
   'ai-key': 'API Key',
   'github-token': 'GitHub Token',
   'linear-key': 'Linear API Key',
+  'calendar-url': 'Calendar iCal URL',
 };
 
 function maskKey(key: string): string {
@@ -41,6 +42,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
   const [aiKey, setAiKey] = useState('');
   const [githubToken, setGithubToken] = useState('');
   const [linearKey, setLinearKey] = useState('');
+  const [calendarUrl, setCalendarUrl] = useState('');
 
   // Load on mount
   useEffect(() => {
@@ -52,6 +54,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     const integrations = integrationsConfigStorage.read();
     if (integrations.github) setGithubToken(integrations.github.token);
     if (integrations.linear) setLinearKey(integrations.linear.apiKey);
+    if (integrations.calendar) setCalendarUrl(integrations.calendar.icsUrl);
   }, []);
 
   const selectedField = FIELDS[selectedIdx] ?? 'ai-provider';
@@ -60,9 +63,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     if (aiKey.trim()) {
       aiConfigStorage.write({ provider: aiProvider, apiKey: aiKey.trim() });
     }
+    // Preserve existing fields (e.g. githubWidget toggle) when saving
+    const existing = integrationsConfigStorage.read();
     const newIntegrations: IntegrationsConfig = {};
     if (githubToken.trim()) newIntegrations.github = { token: githubToken.trim() };
     if (linearKey.trim()) newIntegrations.linear = { apiKey: linearKey.trim() };
+    if (calendarUrl.trim()) newIntegrations.calendar = { icsUrl: calendarUrl.trim() };
+    if (existing.githubWidget !== undefined) newIntegrations.githubWidget = existing.githubWidget;
     integrationsConfigStorage.write(newIntegrations);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -77,6 +84,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
       setGithubToken(inputBuffer);
     } else if (selectedField === 'linear-key') {
       setLinearKey(inputBuffer);
+    } else if (selectedField === 'calendar-url') {
+      setCalendarUrl(inputBuffer);
     }
     setEditing(false);
     setInputBuffer('');
@@ -114,7 +123,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
             ? aiKey
             : selectedField === 'github-token'
               ? githubToken
-              : linearKey;
+              : selectedField === 'linear-key'
+                ? linearKey
+                : calendarUrl;
         setInputBuffer(current);
         setEditing(true);
       }
@@ -130,6 +141,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     if (field === 'ai-key') return maskKey(aiKey);
     if (field === 'github-token') return maskKey(githubToken);
     if (field === 'linear-key') return maskKey(linearKey);
+    if (field === 'calendar-url') return calendarUrl ? calendarUrl.slice(0, 40) + '…' : '(not set)';
     return '';
   }
 
@@ -219,6 +231,30 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
             </Box>
           );
         })}
+
+        {/* Calendar section */}
+        <Box marginTop={1} marginBottom={1}>
+          <Text color={theme.primary} bold>Calendar Integration</Text>
+        </Box>
+        <Box marginBottom={0} gap={2}>
+          <Text {...('calendar-url' === selectedField && !editing ? { color: theme.accent } : {})}>
+            {'calendar-url' === selectedField && !editing ? '›' : ' '}
+          </Text>
+          <Text color={theme.primary} bold dimColor={'calendar-url' !== selectedField}>
+            {FIELD_LABELS['calendar-url']}:
+          </Text>
+          {'calendar-url' === selectedField && editing ? (
+            <Box gap={0}>
+              <Text color={theme.accent}>{inputBuffer}</Text>
+              <Text color={theme.accent} bold>▊</Text>
+            </Box>
+          ) : (
+            <Text>{renderValue('calendar-url')}</Text>
+          )}
+        </Box>
+        <Box marginLeft={3} marginBottom={1}>
+          <Text dimColor>Google Cal: Settings → "Secret address in iCal format"</Text>
+        </Box>
 
         {saved && (
           <Box marginTop={1}>
