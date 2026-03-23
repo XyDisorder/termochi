@@ -5,6 +5,7 @@ import type { Theme } from '../../domain/theme/theme.types.js';
 import type { TaskStressLevel } from '../../domain/pet/pet.logic.js';
 import { integrationsConfigStorage } from '../../infrastructure/storage/integrations-config.js';
 import { todoStorage } from '../../infrastructure/storage/todo-storage.js';
+import type { CalendarEvent } from '../../infrastructure/integrations/calendar.js';
 import type { TodoItem } from '../../infrastructure/storage/todo-storage.js';
 import { fetchGitHubData } from '../../infrastructure/integrations/github.js';
 import type { GitHubData, GitHubPR, GitHubIssue } from '../../infrastructure/integrations/github.js';
@@ -18,6 +19,7 @@ interface TasksScreenProps {
   onBack: () => void;
   onOpenSettings: () => void;
   onStress?: (level: TaskStressLevel) => void;
+  calendarEvents?: CalendarEvent[];
 }
 
 type LoadState<T> =
@@ -118,15 +120,17 @@ function computeStress(gh: LoadState<GitHubData>, lin: LoadState<LinearData>): T
   return 'none';
 }
 
-export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenSettings, onStress }) => {
+export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenSettings, onStress, calendarEvents }) => {
   const integrations = integrationsConfigStorage.read();
   const hasGitHub = Boolean(integrations.github?.token);
   const hasLinear = Boolean(integrations.linear?.apiKey);
+  const hasCalendar = calendarEvents !== undefined;
   const hasAny = hasGitHub || hasLinear;
 
   const tabs = [
     ...(hasGitHub ? ['github' as const] : []),
     ...(hasLinear ? ['linear' as const] : []),
+    ...(hasCalendar ? ['calendar' as const] : []),
     'todo' as const,
   ];
 
@@ -134,6 +138,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
   const [cursorGH, setCursorGH] = useState(0);
   const [cursorLinear, setCursorLinear] = useState(0);
   const [cursorTodo, setCursorTodo] = useState(0);
+  const [cursorCalendar, setCursorCalendar] = useState(0);
   const [todos, setTodos] = useState<TodoItem[]>(() => todoStorage.readAll());
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -215,6 +220,25 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
     if (input === '2' && tabs.length >= 2) { setActiveTabIdx(1); return; }
     if (input === '3' && tabs.length >= 3) { setActiveTabIdx(2); return; }
 
+    if (activeTab === 'calendar') {
+      const events = calendarEvents ?? [];
+      if (key.upArrow) {
+        setCursorCalendar((c) => Math.max(0, c - 1));
+      } else if (key.downArrow) {
+        setCursorCalendar((c) => Math.min(events.length - 1, c + 1));
+      } else if (key.return) {
+        const event = events[cursorCalendar];
+        if (event?.meetingUrl) {
+          openUrl(event.meetingUrl);
+          setFlash('Opening in browser...');
+          setTimeout(() => setFlash(null), 2000);
+        }
+      } else if (input === 'q' || key.escape) {
+        onBack();
+      }
+      return;
+    }
+
     if (activeTab === 'todo') {
       if (key.upArrow) {
         setCursorTodo((c) => Math.max(0, c - 1));
@@ -291,8 +315,10 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
               ? totalGH !== null ? ` (${totalGH})` : ''
               : tab === 'linear'
                 ? totalLinear !== null ? ` (${totalLinear})` : ''
-                : todos.length > 0 ? ` (${pendingTodos}/${todos.length})` : '';
-          const label = tab === 'github' ? 'GitHub' : tab === 'linear' ? 'Linear' : 'Todo';
+                : tab === 'calendar'
+                  ? calendarEvents ? ` (${calendarEvents.length})` : ''
+                  : todos.length > 0 ? ` (${pendingTodos}/${todos.length})` : '';
+          const label = tab === 'github' ? 'GitHub' : tab === 'linear' ? 'Linear' : tab === 'calendar' ? 'Calendar' : 'Todo';
           const staleTag = tab === 'github' && stalePRCount > 0 ? ` ⚠${stalePRCount}` : '';
           return (
             <Box
@@ -311,11 +337,12 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
       </Box>
 
       <Panel
-        title={activeTab === 'github' ? 'GitHub' : activeTab === 'linear' ? 'Linear' : 'Todo'}
+        title={activeTab === 'github' ? 'GitHub' : activeTab === 'linear' ? 'Linear' : activeTab === 'calendar' ? 'Calendar' : 'Todo'}
         borderColor={theme.accent}
       >
         {activeTab === 'github' && <GitHubPane github={github} rows={ghRows} cursor={cursorGH} theme={theme} />}
         {activeTab === 'linear' && <LinearPane linear={linear} rows={linearRows} cursor={cursorLinear} theme={theme} />}
+        {activeTab === 'calendar' && <CalendarPane events={calendarEvents ?? []} cursor={cursorCalendar} theme={theme} />}
         {activeTab === 'todo' && <TodoPane todos={todos} cursor={cursorTodo} theme={theme} />}
       </Panel>
 
@@ -328,7 +355,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
             </Box>
           );
         }
-        if (activeTab === 'todo') return null;
+        if (activeTab === 'todo' || activeTab === 'calendar') return null;
         const url = activeTab === 'github'
           ? getSelectedUrl(ghRows, cursorGH)
           : getSelectedUrl(linearRows, cursorLinear);
@@ -351,7 +378,7 @@ export const TasksScreen: React.FC<TasksScreenProps> = ({ theme, onBack, onOpenS
             : [{ key: '↵', label: 'open' }]
           ),
           ...(tabs.length > 1 ? [{ key: `tab/1-${tabs.length}`, label: 'switch' }] : []),
-          ...(activeTab !== 'todo' ? [{ key: 'r', label: 'refresh' }] : []),
+          ...(activeTab !== 'todo' && activeTab !== 'calendar' ? [{ key: 'r', label: 'refresh' }] : []),
           { key: ',', label: 'settings' },
           { key: 'q/esc', label: 'back' },
         ]}
@@ -501,6 +528,67 @@ const IssueRow: React.FC<{
     <Text dimColor>   {issue.repository}</Text>
   </Box>
 );
+
+// ── Calendar pane ─────────────────────────────────────────────────────────────
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatMinutesUntil(date: Date): string {
+  const min = Math.round((date.getTime() - Date.now()) / 60_000);
+  if (min <= 0) return 'NOW';
+  if (min < 60) return `in ${min}min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `in ${h}h${m}m` : `in ${h}h`;
+}
+
+const CalendarPane: React.FC<{
+  events: CalendarEvent[];
+  cursor: number;
+  theme: Theme;
+}> = ({ events, cursor, theme }) => {
+  if (events.length === 0) {
+    return <Text dimColor>No meetings today ✨</Text>;
+  }
+  const now = new Date();
+  return (
+    <Box flexDirection="column">
+      {events.map((event, i) => {
+        const isSelected = i === cursor;
+        const isPast = event.endAt < now;
+        const isNow = event.startAt <= now && event.endAt >= now;
+        const minutesUntil = Math.round((event.startAt.getTime() - now.getTime()) / 60_000);
+        const isSoon = minutesUntil > 0 && minutesUntil <= 15;
+        return (
+          <Box key={event.id} flexDirection="column" marginLeft={2} marginTop={i === 0 ? 0 : 0}>
+            <Box gap={2}>
+              <Text {...(isSelected ? { color: theme.accent } : { dimColor: true })}>›</Text>
+              <Text {...(isPast ? { dimColor: true } : isNow ? { color: 'red', bold: true } : isSoon ? { color: 'yellow', bold: true } : {})}>
+                {formatTime(event.startAt)}
+              </Text>
+              <Text {...(isSelected ? { color: theme.primary, bold: true } : isPast ? { dimColor: true } : {})}>
+                {event.title}
+              </Text>
+              {event.meetingUrl && !isPast && (
+                <Text dimColor>⬡</Text>
+              )}
+            </Box>
+            <Box gap={2} marginLeft={3}>
+              <Text dimColor>{formatTime(event.startAt)} → {formatTime(event.endAt)}</Text>
+              {!isPast && (
+                <Text {...(isNow ? { color: 'red', bold: true } : isSoon ? { color: 'yellow' } : { dimColor: true })}>
+                  {isNow ? '● NOW' : formatMinutesUntil(event.startAt)}
+                </Text>
+              )}
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
 
 // ── Todo pane ─────────────────────────────────────────────────────────────────
 

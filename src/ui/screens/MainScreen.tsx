@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
-import type { GitHubWidgetData } from '../../app/App.js';
+import type { GitHubWidgetData, NextMeeting } from '../../app/App.js';
 import type { ActionCheck, PetAction, PetState, PetStats } from '../../domain/pet/pet.types.js';
 import type { Theme } from '../../domain/theme/theme.types.js';
 import type { PetEvent } from '../../domain/events/random-events.js';
@@ -23,6 +23,7 @@ interface MainScreenProps {
   githubSummary?: GitHubWidgetData | null;
   githubWidgetVisible?: boolean;
   onToggleGithubWidget?: () => void;
+  nextMeeting?: NextMeeting;
 }
 
 const ACTION_LABELS: Record<PetAction, string> = {
@@ -168,7 +169,7 @@ const TOTAL_FRAMES = 5;
 const STAT_ANIM_DURATION = 900;
 const STAT_ANIM_STEPS = 30;
 
-export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget, nextMeeting }) => {
   const { exit } = useApp();
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -414,6 +415,22 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
             <Text color={theme.accent}>{lastSeen}</Text>
           </Box>
         </Box>
+
+        {/* Next meeting widget */}
+        {nextMeeting && (
+          <Box marginTop={1} gap={2}>
+            <Text dimColor>📅</Text>
+            <Text color={nextMeeting.startsInMin <= 0 ? 'red' : nextMeeting.startsInMin <= 10 ? 'yellow' : theme.primary} bold={nextMeeting.startsInMin <= 10}>
+              {nextMeeting.title}
+            </Text>
+            <Text color={nextMeeting.startsInMin <= 0 ? 'red' : nextMeeting.startsInMin <= 10 ? 'yellow' : theme.accent}>
+              {nextMeeting.startsInMin <= 0 ? '— NOW' : `in ${nextMeeting.startsInMin}min`}
+            </Text>
+            {nextMeeting.url && nextMeeting.startsInMin <= 10 && (
+              <Text dimColor>↵ join</Text>
+            )}
+          </Box>
+        )}
 
         {/* GitHub compact widget */}
         {githubWidgetVisible && githubSummary && (

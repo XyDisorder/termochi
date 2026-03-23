@@ -7,6 +7,8 @@ import type { TaskStressLevel } from '../domain/pet/pet.logic.js';
 import { storage } from '../infrastructure/storage/storage.js';
 import { integrationsConfigStorage } from '../infrastructure/storage/integrations-config.js';
 import { fetchGitHubData } from '../infrastructure/integrations/github.js';
+import { fetchTodayEvents } from '../infrastructure/integrations/calendar.js';
+import type { CalendarEvent } from '../infrastructure/integrations/calendar.js';
 import { getTheme } from '../domain/theme/theme.catalog.js';
 import { getElapsedMinutes, nowISO } from '../infrastructure/clock/clock.js';
 import { OnboardingScreen } from '../ui/screens/OnboardingScreen.js';
@@ -17,6 +19,12 @@ import { FeedGameScreen } from '../ui/screens/FeedGameScreen.js';
 import { SettingsScreen } from '../ui/screens/SettingsScreen.js';
 import { TasksScreen } from '../ui/screens/TasksScreen.js';
 import { AiChatScreen } from '../ui/screens/AiChatScreen.js';
+
+export interface NextMeeting {
+  title: string;
+  startsInMin: number; // negative = already started
+  url?: string;
+}
 
 export interface GitHubWidgetData {
   mergedCount: number;
@@ -47,6 +55,9 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const [githubSummary, setGithubSummary] = useState<GitHubWidgetData | null>(null);
   const [githubWidgetVisible, setGithubWidgetVisible] = useState(false);
   const [githubConfigured, setGithubConfigured] = useState(false);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [nextMeeting, setNextMeeting] = useState<NextMeeting | null>(null);
+  const [calendarConfigured, setCalendarConfigured] = useState(false);
 
   const handleOnboardingComplete = useCallback((newPet: PetState) => {
     storage.write(newPet);
@@ -71,6 +82,37 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       })
       .catch(() => {}); // silent
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch calendar events on mount
+  useEffect(() => {
+    const cfg = integrationsConfigStorage.read();
+    if (!cfg.calendar?.icsUrl) return;
+    setCalendarConfigured(true);
+    fetchTodayEvents(cfg.calendar.icsUrl)
+      .then((events) => setCalendarEvents(events))
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Recompute next meeting every 30s
+  useEffect(() => {
+    function computeNext(): void {
+      const now = new Date();
+      const upcoming = calendarEvents.find((e) => {
+        const min = (e.startAt.getTime() - now.getTime()) / 60_000;
+        return min > -30 && min < 120; // started <30min ago or starting within 2h
+      });
+      if (!upcoming) { setNextMeeting(null); return; }
+      const startsInMin = Math.round((upcoming.startAt.getTime() - now.getTime()) / 60_000);
+      setNextMeeting({
+        title: upcoming.title,
+        startsInMin,
+        ...(upcoming.meetingUrl ? { url: upcoming.meetingUrl } : {}),
+      });
+    }
+    computeNext();
+    const interval = setInterval(computeNext, 30_000);
+    return () => clearInterval(interval);
+  }, [calendarEvents]);
 
   const handleToggleGitHubWidget = useCallback(() => {
     setGithubWidgetVisible((prev) => {
@@ -198,6 +240,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     return (
       <TasksScreen
         theme={theme}
+        {...(calendarConfigured ? { calendarEvents } : {})}
         onBack={() => setScreen('main')}
         onOpenSettings={() => {
           setSettingsReturnScreen('tasks');
@@ -232,6 +275,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       githubSummary={githubSummary}
       githubWidgetVisible={githubWidgetVisible}
       {...(githubConfigured ? { onToggleGithubWidget: handleToggleGitHubWidget } : {})}
+      {...(nextMeeting ? { nextMeeting } : {})}
     />
   );
 };
