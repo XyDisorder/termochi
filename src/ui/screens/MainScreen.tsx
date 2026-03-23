@@ -24,9 +24,7 @@ interface MainScreenProps {
   initialEvent?: PetEvent | null;
   githubSummary?: GitHubWidgetData | null;
   githubWidgetVisible?: boolean;
-  onToggleGithubWidget?: () => void;
   calendarWidgetVisible?: boolean;
-  onToggleCalendarWidget?: () => void;
   calendarEvents?: CalendarEvent[];
   nextMeeting?: NextMeeting;
 }
@@ -59,32 +57,19 @@ const FOOTER_ACTIONS: Array<{ key: string; action: PetAction; label: string }> =
   { key: 'h', action: 'heal',  label: 'Heal'  },
 ];
 
-const ActionFooter: React.FC<{
-  pet: PetState;
-  theme: Theme;
-  onNavigate: (s: 'stats' | 'play-game' | 'feed-game' | 'settings' | 'tasks' | 'ai-chat') => void;
-  onExit: () => void;
-  githubConfigured?: boolean;
-  githubWidgetVisible?: boolean;
-  calendarConfigured?: boolean;
-  calendarWidgetVisible?: boolean;
-  hasMeetingUrl?: boolean;
-}> = ({ pet, theme, githubConfigured, githubWidgetVisible, calendarConfigured, calendarWidgetVisible, hasMeetingUrl }) => (
-  <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
+const PetMenuFooter: React.FC<{ pet: PetState; theme: Theme }> = ({ pet, theme }) => (
+  <Box borderStyle="single" borderColor={theme.accent} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
     {FOOTER_ACTIONS.map(({ key, action, label }) => {
       const check: ActionCheck = canPerformAction(pet, action);
       if (check.allowed) {
         return (
           <Box key={action} gap={1}>
-            <Text color={theme.border} bold>[{key}]</Text>
+            <Text color={theme.accent} bold>[{key}]</Text>
             <Text>{label}</Text>
           </Box>
         );
       }
-      const sub =
-        check.reason === 'cooldown'
-          ? `${check.remainingMinutes}m`
-          : check.message;
+      const sub = check.reason === 'cooldown' ? `${check.remainingMinutes}m` : check.message;
       return (
         <Box key={action} gap={1}>
           <Text dimColor>[{key}]</Text>
@@ -94,6 +79,22 @@ const ActionFooter: React.FC<{
       );
     })}
     <Box gap={1}>
+      <Text color={theme.border} bold>[esc]</Text>
+      <Text>back</Text>
+    </Box>
+  </Box>
+);
+
+const MainFooter: React.FC<{
+  theme: Theme;
+  hasMeetingUrl?: boolean;
+}> = ({ theme, hasMeetingUrl }) => (
+  <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
+    <Box gap={1}>
+      <Text color={theme.border} bold>[m]</Text>
+      <Text>Pet</Text>
+    </Box>
+    <Box gap={1}>
       <Text color={theme.border} bold>[a]</Text>
       <Text>Chat</Text>
     </Box>
@@ -101,28 +102,12 @@ const ActionFooter: React.FC<{
       <Text color={theme.border} bold>[t]</Text>
       <Text>Tasks</Text>
     </Box>
-    {githubConfigured && (
-      <Box gap={1}>
-        <Text color={theme.border} bold>[g]</Text>
-        <Text>{githubWidgetVisible ? 'hide GH' : 'GitHub'}</Text>
-      </Box>
-    )}
-    {calendarConfigured && (
-      <Box gap={1}>
-        <Text color={theme.border} bold>[l]</Text>
-        <Text>{calendarWidgetVisible ? 'hide Cal' : 'Calendar'}</Text>
-      </Box>
-    )}
     {hasMeetingUrl && (
       <Box gap={1}>
         <Text color={theme.border} bold>[↵]</Text>
         <Text>join meeting</Text>
       </Box>
     )}
-    <Box gap={1}>
-      <Text color={theme.border} bold>[i]</Text>
-      <Text>Stats</Text>
-    </Box>
     <Box gap={1}>
       <Text color={theme.border} bold>[,]</Text>
       <Text>Settings</Text>
@@ -189,12 +174,13 @@ const TOTAL_FRAMES = 5;
 const STAT_ANIM_DURATION = 900;
 const STAT_ANIM_STEPS = 30;
 
-export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget, calendarWidgetVisible, onToggleCalendarWidget, calendarEvents, nextMeeting }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, calendarWidgetVisible, calendarEvents, nextMeeting }) => {
   const { exit } = useApp();
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [currentAction, setCurrentAction] = useState<PetAction | null>(null);
   const [animFrame, setAnimFrame] = useState(0);
+  const [petMenuOpen, setPetMenuOpen] = useState(false);
 
   // displayStats are what the bars actually show — they animate smoothly
   const [displayStats, setDisplayStats] = useState<PetStats>(pet.stats);
@@ -287,45 +273,41 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
   );
 
   useInput((input, key) => {
-    if (isAnimating) return; // ignore all inputs while animating
-    if (input === 'f') {
-      // 'feed' launches mini-game — check cooldown/stat gate first
-      const check = canPerformAction(pet, 'feed');
-      if (!check.allowed) {
-        const msg =
-          check.reason === 'cooldown'
-            ? `Not yet — wait ${check.remainingMinutes}m`
-            : `Can't feed — ${check.message}`;
-        setFlashMessage(msg);
-        setTimeout(() => setFlashMessage(null), 2000);
-      } else {
-        onNavigate('feed-game');
+    if (isAnimating) return;
+
+    if (petMenuOpen) {
+      if (input === 'f') {
+        const check = canPerformAction(pet, 'feed');
+        if (!check.allowed) {
+          const msg = check.reason === 'cooldown' ? `Not yet — wait ${check.remainingMinutes}m` : `Can't feed — ${check.message}`;
+          setFlashMessage(msg);
+          setTimeout(() => setFlashMessage(null), 2000);
+        } else {
+          onNavigate('feed-game');
+        }
       }
-    }
-    else if (input === 'p') {
-      // 'play' launches mini-game — check cooldown/stat gate first
-      const check = canPerformAction(pet, 'play');
-      if (!check.allowed) {
-        const msg =
-          check.reason === 'cooldown'
-            ? `Not yet — wait ${check.remainingMinutes}m`
-            : `Can't play — ${check.message}`;
-        setFlashMessage(msg);
-        setTimeout(() => setFlashMessage(null), 2000);
-      } else {
-        onNavigate('play-game');
+      else if (input === 'p') {
+        const check = canPerformAction(pet, 'play');
+        if (!check.allowed) {
+          const msg = check.reason === 'cooldown' ? `Not yet — wait ${check.remainingMinutes}m` : `Can't play — ${check.message}`;
+          setFlashMessage(msg);
+          setTimeout(() => setFlashMessage(null), 2000);
+        } else {
+          onNavigate('play-game');
+        }
       }
+      else if (input === 's') triggerAction('sleep');
+      else if (input === 'c') triggerAction('clean');
+      else if (input === 'h') triggerAction('heal');
+      else if (key.escape || input === 'm') setPetMenuOpen(false);
+      return;
     }
-    else if (input === 's') triggerAction('sleep');
-    else if (input === 'c') triggerAction('clean');
-    else if (input === 'h') triggerAction('heal');
+
+    if (input === 'm') setPetMenuOpen(true);
     else if (input === 'a') onNavigate('ai-chat');
     else if (input === 't') onNavigate('tasks');
-    else if (input === 'g' && onToggleGithubWidget) onToggleGithubWidget();
-    else if (input === 'l' && onToggleCalendarWidget) onToggleCalendarWidget();
     else if (key.return && nextMeeting?.url) spawn('open', [nextMeeting.url], { detached: true, stdio: 'ignore' }).unref();
     else if (input === ',') onNavigate('settings');
-    else if (input === 'i') onNavigate('stats');
     else if (input === 'q' || key.escape) exit();
   });
 
@@ -482,18 +464,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
 
       {isAnimating ? (
         <FooterHelp hints={[{ key: '...', label: 'animating' }]} borderColor={theme.border} />
+      ) : petMenuOpen ? (
+        <PetMenuFooter pet={pet} theme={theme} />
       ) : (
-        <ActionFooter
-          pet={pet}
-          theme={theme}
-          onNavigate={onNavigate}
-          onExit={exit}
-          githubConfigured={!!onToggleGithubWidget}
-          githubWidgetVisible={githubWidgetVisible ?? false}
-          calendarConfigured={!!onToggleCalendarWidget}
-          calendarWidgetVisible={calendarWidgetVisible ?? false}
-          hasMeetingUrl={!!(calendarWidgetVisible && nextMeeting?.url)}
-        />
+        <MainFooter theme={theme} hasMeetingUrl={!!(calendarWidgetVisible && nextMeeting?.url)} />
       )}
     </Box>
   );

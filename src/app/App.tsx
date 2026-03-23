@@ -226,7 +226,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const theme = getTheme(pet.theme);
 
   if (screen === 'stats') {
-    return <StatsScreen pet={pet} theme={theme} onBack={() => setScreen('main')} />;
+    return <StatsScreen pet={pet} theme={theme} onBack={() => setScreen(settingsReturnScreen === 'settings' ? 'settings' : 'main')} />;
   }
 
   if (screen === 'play-game') {
@@ -254,7 +254,16 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     return (
       <SettingsScreen
         theme={theme}
-        onBack={() => setScreen(settingsReturnScreen)}
+        onBack={() => {
+          const cfg = integrationsConfigStorage.read();
+          setGithubWidgetVisible(cfg.githubWidget ?? false);
+          setCalendarWidgetVisible(cfg.calendarWidget ?? false);
+          setScreen(settingsReturnScreen);
+        }}
+        onStats={() => {
+          setSettingsReturnScreen('settings');
+          setScreen('stats');
+        }}
       />
     );
   }
@@ -297,9 +306,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       initialEvent={initialEvent ?? null}
       githubSummary={githubSummary}
       githubWidgetVisible={githubWidgetVisible}
-      {...(githubConfigured ? { onToggleGithubWidget: handleToggleGitHubWidget } : {})}
       calendarWidgetVisible={calendarWidgetVisible}
-      {...(calendarConfigured ? { onToggleCalendarWidget: handleToggleCalendarWidget } : {})}
       {...(calendarConfigured ? { calendarEvents } : {})}
       {...(nextMeeting ? { nextMeeting } : {})}
     />

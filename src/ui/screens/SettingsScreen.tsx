@@ -11,18 +11,21 @@ import { FooterHelp } from '../components/FooterHelp.js';
 interface SettingsScreenProps {
   theme: Theme;
   onBack: () => void;
+  onStats?: () => void;
 }
 
-type Field = 'ai-provider' | 'ai-key' | 'github-token' | 'linear-key' | 'calendar-url';
+type Field = 'ai-provider' | 'ai-key' | 'github-token' | 'github-widget' | 'linear-key' | 'calendar-url' | 'calendar-widget';
 
-const FIELDS: Field[] = ['ai-provider', 'ai-key', 'github-token', 'linear-key', 'calendar-url'];
+const FIELDS: Field[] = ['ai-provider', 'ai-key', 'github-token', 'github-widget', 'linear-key', 'calendar-url', 'calendar-widget'];
 
 const FIELD_LABELS: Record<Field, string> = {
   'ai-provider': 'AI Provider',
   'ai-key': 'API Key',
   'github-token': 'GitHub Token',
+  'github-widget': 'Show widget on home',
   'linear-key': 'Linear API Key',
   'calendar-url': 'Calendar iCal URL',
+  'calendar-widget': 'Show widget on home',
 };
 
 function maskKey(key: string): string {
@@ -31,7 +34,7 @@ function maskKey(key: string): string {
   return key.slice(0, 6) + '••••••••' + key.slice(-4);
 }
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack, onStats }) => {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [editing, setEditing] = useState(false);
   const [inputBuffer, setInputBuffer] = useState('');
@@ -41,8 +44,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
   const [aiProvider, setAiProvider] = useState<AiProvider>('claude');
   const [aiKey, setAiKey] = useState('');
   const [githubToken, setGithubToken] = useState('');
+  const [githubWidgetOn, setGithubWidgetOn] = useState(false);
   const [linearKey, setLinearKey] = useState('');
   const [calendarUrl, setCalendarUrl] = useState('');
+  const [calendarWidgetOn, setCalendarWidgetOn] = useState(false);
 
   // Load on mount
   useEffect(() => {
@@ -53,8 +58,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     }
     const integrations = integrationsConfigStorage.read();
     if (integrations.github) setGithubToken(integrations.github.token);
+    if (typeof integrations.githubWidget === 'boolean') setGithubWidgetOn(integrations.githubWidget);
     if (integrations.linear) setLinearKey(integrations.linear.apiKey);
     if (integrations.calendar) setCalendarUrl(integrations.calendar.icsUrl);
+    if (typeof integrations.calendarWidget === 'boolean') setCalendarWidgetOn(integrations.calendarWidget);
   }, []);
 
   const selectedField = FIELDS[selectedIdx] ?? 'ai-provider';
@@ -76,9 +83,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     setTimeout(() => setSaved(false), 2000);
   }
 
+  function toggleWidget(field: 'github-widget' | 'calendar-widget'): void {
+    const cfg = integrationsConfigStorage.read();
+    if (field === 'github-widget' && githubToken.trim()) {
+      const next = !githubWidgetOn;
+      setGithubWidgetOn(next);
+      integrationsConfigStorage.write({ ...cfg, githubWidget: next });
+    } else if (field === 'calendar-widget' && calendarUrl.trim()) {
+      const next = !calendarWidgetOn;
+      setCalendarWidgetOn(next);
+      integrationsConfigStorage.write({ ...cfg, calendarWidget: next });
+    }
+  }
+
   function commitEdit(): void {
     if (selectedField === 'ai-provider') {
       setAiProvider(aiProvider === 'claude' ? 'openai' : 'claude');
+    } else if (selectedField === 'github-widget' || selectedField === 'calendar-widget') {
+      toggleWidget(selectedField);
     } else if (selectedField === 'ai-key') {
       setAiKey(inputBuffer);
     } else if (selectedField === 'github-token') {
@@ -118,6 +140,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     } else if (key.return || input === 'e') {
       if (selectedField === 'ai-provider') {
         setAiProvider((p) => (p === 'claude' ? 'openai' : 'claude'));
+      } else if (selectedField === 'github-widget' || selectedField === 'calendar-widget') {
+        toggleWidget(selectedField);
       } else {
         const current =
           selectedField === 'ai-key'
@@ -130,6 +154,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
         setInputBuffer(current);
         setEditing(true);
       }
+    } else if (input === 'i' && onStats) {
+      onStats();
     } else if (input === 's') {
       saveAll();
     } else if (input === 'q' || key.escape) {
@@ -141,8 +167,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     if (field === 'ai-provider') return aiProvider;
     if (field === 'ai-key') return maskKey(aiKey);
     if (field === 'github-token') return maskKey(githubToken);
+    if (field === 'github-widget') return githubToken.trim() ? (githubWidgetOn ? 'ON' : 'OFF') : '(set token first)';
     if (field === 'linear-key') return maskKey(linearKey);
     if (field === 'calendar-url') return calendarUrl ? calendarUrl.slice(0, 40) + '…' : '(not set)';
+    if (field === 'calendar-widget') return calendarUrl.trim() ? (calendarWidgetOn ? 'ON' : 'OFF') : '(set URL first)';
     return '';
   }
 
@@ -182,7 +210,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
           <Text color={theme.primary} bold>GitHub Integration</Text>
         </Box>
 
-        {(['github-token'] as Field[]).map((field) => {
+        {(['github-token', 'github-widget'] as Field[]).map((field) => {
           const isSelected = field === selectedField && !editing;
           const isEditingThis = field === selectedField && editing;
           return (
@@ -237,22 +265,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
         <Box marginTop={1} marginBottom={1}>
           <Text color={theme.primary} bold>Calendar Integration</Text>
         </Box>
-        <Box marginBottom={0} gap={2}>
-          <Text {...('calendar-url' === selectedField && !editing ? { color: theme.accent } : {})}>
-            {'calendar-url' === selectedField && !editing ? '›' : ' '}
-          </Text>
-          <Text color={theme.primary} bold dimColor={'calendar-url' !== selectedField}>
-            {FIELD_LABELS['calendar-url']}:
-          </Text>
-          {'calendar-url' === selectedField && editing ? (
-            <Box gap={0}>
-              <Text color={theme.accent}>{inputBuffer}</Text>
-              <Text color={theme.accent} bold>▊</Text>
+        {(['calendar-url', 'calendar-widget'] as Field[]).map((field) => {
+          const isSelected = field === selectedField && !editing;
+          const isEditingThis = field === selectedField && editing;
+          return (
+            <Box key={field} marginBottom={0} gap={2}>
+              <Text {...(isSelected ? { color: theme.accent } : {})}>
+                {isSelected ? '›' : ' '}
+              </Text>
+              <Text color={theme.primary} bold dimColor={!isSelected}>
+                {FIELD_LABELS[field]}:
+              </Text>
+              {isEditingThis ? (
+                <Box gap={0}>
+                  <Text color={theme.accent}>{inputBuffer}</Text>
+                  <Text color={theme.accent} bold>▊</Text>
+                </Box>
+              ) : (
+                <Text>{renderValue(field)}</Text>
+              )}
             </Box>
-          ) : (
-            <Text>{renderValue('calendar-url')}</Text>
-          )}
-        </Box>
+          );
+        })}
         <Box marginLeft={3} marginBottom={1}>
           <Text dimColor>Google Cal: Settings → "Secret address in iCal format"</Text>
         </Box>
@@ -283,8 +317,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
               ]
             : [
                 { key: '↑↓', label: 'navigate' },
-                { key: '↵', label: 'edit' },
+                { key: '↵', label: 'edit/toggle' },
                 { key: 's', label: 'save' },
+                ...(onStats ? [{ key: 'i', label: 'stats' }] : []),
                 { key: 'q/esc', label: 'back' },
               ]
         }
