@@ -66,33 +66,45 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     setIsOnboarding(false);
   }, []);
 
-  // Fetch GitHub summary silently on mount
+  // Fetch GitHub summary on mount + refresh every 5 minutes
   useEffect(() => {
     const cfg = integrationsConfigStorage.read();
     setGithubWidgetVisible(cfg.githubWidget ?? false);
     if (!cfg.github) return;
     setGithubConfigured(true);
-    fetchGitHubData(cfg.github.token)
-      .then((data) => {
-        setGithubSummary({
-          mergedCount: data.mergedPRs.length,
-          openCount: data.openPRs.length,
-          staleCount: data.openPRs.filter((pr) => pr.openHours >= 48).length,
-          reviewCount: data.reviewRequested.length,
-        });
-      })
-      .catch(() => {}); // silent
+    const token = cfg.github.token;
+    function refresh(): void {
+      fetchGitHubData(token)
+        .then((data) => {
+          setGithubSummary({
+            mergedCount: data.mergedPRs.length,
+            openCount: data.openPRs.length,
+            staleCount: data.openPRs.filter((pr) => pr.openHours >= 48).length,
+            reviewCount: data.reviewRequested.length,
+          });
+        })
+        .catch(() => {});
+    }
+    refresh();
+    const interval = setInterval(refresh, 5 * 60_000);
+    return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch calendar events on mount
+  // Fetch calendar events on mount + refresh every 5 minutes
   useEffect(() => {
     const cfg = integrationsConfigStorage.read();
     setCalendarWidgetVisible(cfg.calendarWidget ?? false);
     if (!cfg.calendar?.icsUrl) return;
     setCalendarConfigured(true);
-    fetchTodayEvents(cfg.calendar.icsUrl)
-      .then((events) => setCalendarEvents(events))
-      .catch(() => {});
+    const icsUrl = cfg.calendar.icsUrl;
+    function refresh(): void {
+      fetchTodayEvents(icsUrl)
+        .then((events) => setCalendarEvents(events))
+        .catch(() => {});
+    }
+    refresh();
+    const interval = setInterval(refresh, 5 * 60_000);
+    return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Recompute next meeting every 30s
