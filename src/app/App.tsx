@@ -58,6 +58,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [nextMeeting, setNextMeeting] = useState<NextMeeting | null>(null);
   const [calendarConfigured, setCalendarConfigured] = useState(false);
+  const [calendarWidgetVisible, setCalendarWidgetVisible] = useState(false);
 
   const handleOnboardingComplete = useCallback((newPet: PetState) => {
     storage.write(newPet);
@@ -86,6 +87,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   // Fetch calendar events on mount
   useEffect(() => {
     const cfg = integrationsConfigStorage.read();
+    setCalendarWidgetVisible(cfg.calendarWidget ?? false);
     if (!cfg.calendar?.icsUrl) return;
     setCalendarConfigured(true);
     fetchTodayEvents(cfg.calendar.icsUrl)
@@ -113,6 +115,15 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     const interval = setInterval(computeNext, 30_000);
     return () => clearInterval(interval);
   }, [calendarEvents]);
+
+  const handleToggleCalendarWidget = useCallback(() => {
+    setCalendarWidgetVisible((prev) => {
+      const next = !prev;
+      const cfg = integrationsConfigStorage.read();
+      integrationsConfigStorage.write({ ...cfg, calendarWidget: next });
+      return next;
+    });
+  }, []);
 
   const handleToggleGitHubWidget = useCallback(() => {
     setGithubWidgetVisible((prev) => {
@@ -275,6 +286,8 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       githubSummary={githubSummary}
       githubWidgetVisible={githubWidgetVisible}
       {...(githubConfigured ? { onToggleGithubWidget: handleToggleGitHubWidget } : {})}
+      calendarWidgetVisible={calendarWidgetVisible}
+      {...(calendarConfigured ? { onToggleCalendarWidget: handleToggleCalendarWidget } : {})}
       {...(nextMeeting ? { nextMeeting } : {})}
     />
   );

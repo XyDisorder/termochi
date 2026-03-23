@@ -23,6 +23,8 @@ interface MainScreenProps {
   githubSummary?: GitHubWidgetData | null;
   githubWidgetVisible?: boolean;
   onToggleGithubWidget?: () => void;
+  calendarWidgetVisible?: boolean;
+  onToggleCalendarWidget?: () => void;
   nextMeeting?: NextMeeting;
 }
 
@@ -61,7 +63,9 @@ const ActionFooter: React.FC<{
   onExit: () => void;
   githubConfigured?: boolean;
   githubWidgetVisible?: boolean;
-}> = ({ pet, theme, githubConfigured, githubWidgetVisible }) => (
+  calendarConfigured?: boolean;
+  calendarWidgetVisible?: boolean;
+}> = ({ pet, theme, githubConfigured, githubWidgetVisible, calendarConfigured, calendarWidgetVisible }) => (
   <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
     {FOOTER_ACTIONS.map(({ key, action, label }) => {
       const check: ActionCheck = canPerformAction(pet, action);
@@ -97,6 +101,12 @@ const ActionFooter: React.FC<{
       <Box gap={1}>
         <Text color={theme.border} bold>[g]</Text>
         <Text>{githubWidgetVisible ? 'hide GH' : 'GitHub'}</Text>
+      </Box>
+    )}
+    {calendarConfigured && (
+      <Box gap={1}>
+        <Text color={theme.border} bold>[l]</Text>
+        <Text>{calendarWidgetVisible ? 'hide Cal' : 'Calendar'}</Text>
       </Box>
     )}
     <Box gap={1}>
@@ -169,7 +179,7 @@ const TOTAL_FRAMES = 5;
 const STAT_ANIM_DURATION = 900;
 const STAT_ANIM_STEPS = 30;
 
-export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget, nextMeeting }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, onToggleGithubWidget, calendarWidgetVisible, onToggleCalendarWidget, nextMeeting }) => {
   const { exit } = useApp();
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -302,6 +312,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
     else if (input === 'a') onNavigate('ai-chat');
     else if (input === 't') onNavigate('tasks');
     else if (input === 'g' && onToggleGithubWidget) onToggleGithubWidget();
+    else if (input === 'l' && onToggleCalendarWidget) onToggleCalendarWidget();
     else if (input === ',') onNavigate('settings');
     else if (input === 'i') onNavigate('stats');
     else if (input === 'q' || key.escape) exit();
@@ -417,7 +428,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
         </Box>
 
         {/* Next meeting widget */}
-        {nextMeeting && (
+        {calendarWidgetVisible && nextMeeting && (
           <Box marginTop={1} gap={2}>
             <Text dimColor>📅</Text>
             <Text color={nextMeeting.startsInMin <= 0 ? 'red' : nextMeeting.startsInMin <= 10 ? 'yellow' : theme.primary} bold={nextMeeting.startsInMin <= 10}>
@@ -458,6 +469,8 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
           onExit={exit}
           githubConfigured={!!onToggleGithubWidget}
           githubWidgetVisible={githubWidgetVisible ?? false}
+          calendarConfigured={!!onToggleCalendarWidget}
+          calendarWidgetVisible={calendarWidgetVisible ?? false}
         />
       )}
     </Box>
