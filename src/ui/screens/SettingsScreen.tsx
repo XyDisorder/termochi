@@ -70,6 +70,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ theme, onBack })
     if (linearKey.trim()) newIntegrations.linear = { apiKey: linearKey.trim() };
     if (calendarUrl.trim()) newIntegrations.calendar = { icsUrl: calendarUrl.trim() };
     if (existing.githubWidget !== undefined) newIntegrations.githubWidget = existing.githubWidget;
+    if (existing.calendarWidget !== undefined) newIntegrations.calendarWidget = existing.calendarWidget;
     integrationsConfigStorage.write(newIntegrations);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

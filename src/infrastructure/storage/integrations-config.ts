@@ -22,6 +22,7 @@ export interface IntegrationsConfig {
   linear?: LinearConfig;
   calendar?: CalendarConfig;
   githubWidget?: boolean;
+  calendarWidget?: boolean;
 }
 
 export const integrationsConfigStorage = {
@@ -58,6 +59,9 @@ export const integrationsConfigStorage = {
       }
       if (typeof obj['githubWidget'] === 'boolean') {
         result.githubWidget = obj['githubWidget'];
+      }
+      if (typeof obj['calendarWidget'] === 'boolean') {
+        result.calendarWidget = obj['calendarWidget'];
       }
       return result;
     } catch { return {}; }
