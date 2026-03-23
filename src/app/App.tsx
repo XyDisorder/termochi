@@ -52,6 +52,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const [screen, setScreen] = useState<AppScreen>('main');
   const [isOnboarding, setIsOnboarding] = useState(initialPet === null);
   const [settingsReturnScreen, setSettingsReturnScreen] = useState<AppScreen>('main');
+  const [statsReturnScreen, setStatsReturnScreen] = useState<AppScreen>('main');
   const [githubSummary, setGithubSummary] = useState<GitHubWidgetData | null>(null);
   const [githubWidgetVisible, setGithubWidgetVisible] = useState(false);
   const [githubConfigured, setGithubConfigured] = useState(false);
@@ -226,7 +227,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const theme = getTheme(pet.theme);
 
   if (screen === 'stats') {
-    return <StatsScreen pet={pet} theme={theme} onBack={() => setScreen(settingsReturnScreen === 'settings' ? 'settings' : 'main')} />;
+    return <StatsScreen pet={pet} theme={theme} onBack={() => setScreen(statsReturnScreen)} />;
   }
 
   if (screen === 'play-game') {
@@ -261,7 +262,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
           setScreen(settingsReturnScreen);
         }}
         onStats={() => {
-          setSettingsReturnScreen('settings');
+          setStatsReturnScreen('settings');
           setScreen('stats');
         }}
       />
