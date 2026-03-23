@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
+import { spawn } from 'node:child_process';
 import type { GitHubWidgetData, NextMeeting } from '../../app/App.js';
 import type { CalendarEvent } from '../../infrastructure/integrations/calendar.js';
 import type { ActionCheck, PetAction, PetState, PetStats } from '../../domain/pet/pet.types.js';
@@ -67,7 +68,8 @@ const ActionFooter: React.FC<{
   githubWidgetVisible?: boolean;
   calendarConfigured?: boolean;
   calendarWidgetVisible?: boolean;
-}> = ({ pet, theme, githubConfigured, githubWidgetVisible, calendarConfigured, calendarWidgetVisible }) => (
+  hasMeetingUrl?: boolean;
+}> = ({ pet, theme, githubConfigured, githubWidgetVisible, calendarConfigured, calendarWidgetVisible, hasMeetingUrl }) => (
   <Box borderStyle="single" borderColor={theme.border} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
     {FOOTER_ACTIONS.map(({ key, action, label }) => {
       const check: ActionCheck = canPerformAction(pet, action);
@@ -109,6 +111,12 @@ const ActionFooter: React.FC<{
       <Box gap={1}>
         <Text color={theme.border} bold>[l]</Text>
         <Text>{calendarWidgetVisible ? 'hide Cal' : 'Calendar'}</Text>
+      </Box>
+    )}
+    {hasMeetingUrl && (
+      <Box gap={1}>
+        <Text color={theme.border} bold>[↵]</Text>
+        <Text>join meeting</Text>
       </Box>
     )}
     <Box gap={1}>
@@ -315,6 +323,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
     else if (input === 't') onNavigate('tasks');
     else if (input === 'g' && onToggleGithubWidget) onToggleGithubWidget();
     else if (input === 'l' && onToggleCalendarWidget) onToggleCalendarWidget();
+    else if (key.return && nextMeeting?.url) spawn('open', [nextMeeting.url], { detached: true, stdio: 'ignore' }).unref();
     else if (input === ',') onNavigate('settings');
     else if (input === 'i') onNavigate('stats');
     else if (input === 'q' || key.escape) exit();
@@ -441,8 +450,10 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
                 <Text color={nextMeeting.startsInMin <= 0 ? 'red' : nextMeeting.startsInMin <= 10 ? 'yellow' : theme.accent}>
                   {nextMeeting.startsInMin <= 0 ? '— NOW' : `in ${nextMeeting.startsInMin}min`}
                 </Text>
-                {nextMeeting.url && nextMeeting.startsInMin <= 10 && (
-                  <Text dimColor>↵ join</Text>
+                {nextMeeting.url && (
+                  <Text color={theme.accent}>
+                    {`\x1b]8;;${nextMeeting.url}\x07↗ join\x1b]8;;\x07`}
+                  </Text>
                 )}
               </>
             ) : calendarEvents && calendarEvents.length > 0 ? (
@@ -481,6 +492,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
           githubWidgetVisible={githubWidgetVisible ?? false}
           calendarConfigured={!!onToggleCalendarWidget}
           calendarWidgetVisible={calendarWidgetVisible ?? false}
+          hasMeetingUrl={!!(calendarWidgetVisible && nextMeeting?.url)}
         />
       )}
     </Box>
