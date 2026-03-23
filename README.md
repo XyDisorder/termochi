@@ -46,13 +46,20 @@ Termochi is a **virtual pet that lives in your terminal**. It's not a toy demo �
 │  Mochi is absolutely thriving!                              │
 │                                                             │
 │  Age: 12 days old  ·  Last seen: 2 minutes ago              │
+│  📅 Stand-up  in 8min                                       │
 │  GH  ✓ 3 merged  ● 5 open  ⚠ 2 stuck                       │
 ╰─────────────────────────────────────────────────────────────╯
 
-[f] Feed  [p] Play  [s] Sleep  [c] Clean  [h] Heal  [a] Chat  [t] Tasks  [g] hide GH  [i] Stats  [,] Settings  [q] Quit
+[m] Pet  [a] Chat  [t] Tasks  [,] Settings  [q] Quit
 ```
 
-> The footer shows **live action availability** — cooldowns and stat blocks update in real time.
+Press `m` to open the pet actions submenu:
+
+```
+[f] Feed  [p] Play  [s] Sleep  [c] Clean  [h] Heal  [esc] back
+```
+
+> Action availability (cooldowns, stat blocks) is shown live in the submenu.
 
 ---
 
@@ -135,6 +142,8 @@ The Stats screen shows the current stage, days alive, and days until next evolut
 
 ## Actions
 
+Press `m` on the main screen to open the pet actions submenu.
+
 All actions have **cooldowns** and **stat gates** — no infinite feeding.
 
 | Key | Action | Cooldown | Blocked when |
@@ -191,7 +200,7 @@ Your companion **never breaks character** — they respond as themselves, with f
 │                                                   │
 ╰───────────────────────────────────────────────────╯
   > _
-  /remember …   /forget   esc back
+  /remember …   /forget   /todo …   esc back
 ```
 
 ### Persistent Memory
@@ -206,6 +215,16 @@ Your companion remembers things across sessions:
 
 Memories are injected into every conversation — your companion won't ask the same questions twice.
 
+### Todo list from chat
+
+Type `/todo <task>` during a conversation to add an item to your todo list. Your companion will suggest it when you mention something you need to do.
+
+```
+/todo review the auth PR before Friday
+```
+
+The item appears instantly in the **Tasks → Todo** tab.
+
 Talking to your companion applies the Talk action, boosting mood.
 
 ### Setup
@@ -217,29 +236,48 @@ Supported: **Claude** (Anthropic) and **OpenAI** (GPT-4o and friends).
 
 ## 📋 Tasks & Integrations
 
-Press `t` to open the Tasks view. Connect GitHub and/or Linear to see your work items in one place.
+Press `t` to open the Tasks view. It has up to 4 tabs depending on what's configured:
 
 ```
-╭─── Tasks ──────────────────────────────────────────╮
-│  [1] GitHub (5) ⚠2    [2] Linear (3)               │
-│                                                     │
-│  ✓ 3 merged  ●  5 open  ⚠ 2 stuck (>2d open)      │
-│  ─────────────────────────────────────────────────  │
-│  ● fix: auth token expiry         xydisorder/app    │
-│  ● feat: dark mode toggle         xydisorder/app    │
-│  ● ⚠ fix: race condition          xydisorder/api  2d│
-│  ● ⚠ chore: update deps           xydisorder/api  3d│
-│  ⊙ review: add pagination         colleague/app    │
-│                                                     │
-│  https://github.com/…/pull/42                       │
-╰─────────────────────────────────────────────────────╯
-  ↑↓ navigate   ↵ open in browser   1/2/tab switch   esc back
+╭─── Tasks ───────────────────────────────────────────────╮
+│  [1] GitHub (5) ⚠2   [2] Linear (3)   [3] Todo (2/4)   │
+│                       [4] Calendar (3)                   │
+│                                                          │
+│  ✓ 3 merged  ●  5 open  ⚠ 2 stuck (>2d open)           │
+│  ──────────────────────────────────────────────────────  │
+│  ● fix: auth token expiry         xydisorder/app         │
+│  ● feat: dark mode toggle         xydisorder/app         │
+│  ● ⚠ fix: race condition          xydisorder/api  2d     │
+│  ⊙ review: add pagination         colleague/app          │
+╰──────────────────────────────────────────────────────────╯
+  ↑↓ navigate   ↵ open in browser   1/2/3/4/tab switch   esc back
 ```
 
-- `↑` `↓` to navigate, `↵` to open in browser
-- `1` / `2` / `tab` to switch between GitHub and Linear
-- PRs open for more than 2 days are flagged with `⚠` and a red border
-- Reviews requested are shown with `⊙`
+- `1` / `2` / `3` / `4` / `tab` to switch tabs
+- `↑` `↓` to navigate items, `↵` to open in browser
+- PRs open more than 2 days are flagged `⚠`
+
+### GitHub tab
+
+Open PRs, review requests, merged today. PRs open for 2+ days get a red `⚠`.
+
+### Linear tab
+
+Assigned issues from your Linear workspace.
+
+### Todo tab (always visible)
+
+A personal checklist, always present even without any integration.
+
+- `space` / `↵` to check/uncheck
+- `d` to delete
+- Add items with `/todo <text>` from the AI chat
+
+### Calendar tab
+
+Today's meetings from any iCal URL (Google Calendar, Outlook, Apple Calendar). Shows start time, how many minutes away, and a meeting link indicator `⬡` if a URL is detected.
+
+Events within 30 minutes are highlighted yellow; ongoing meetings are red.
 
 ### Mood impact
 
@@ -247,21 +285,25 @@ Your companion reacts to your workload:
 
 - 5+ PRs awaiting your review, or urgent Linear issues → mood malus applied
 
-### GitHub widget on main screen
+### Widgets on main screen
 
-Press `g` on the main screen to toggle a compact GitHub summary:
+A compact summary line can be shown on the home screen for GitHub and Calendar. Toggle them from **Settings → GitHub/Calendar → Show widget on home**.
 
 ```
 GH  ✓ 3 merged  ● 5 open  ⊙ 2 review  ⚠ 1 stuck
+📅 Stand-up  in 23min
 ```
 
-Visibility preference is saved automatically.
+When a meeting has a link and is coming up soon, pressing `↵` on the main screen opens it in the browser.
 
 ### Setup
 
-Go to Settings (`,`) and enter:
+Go to Settings (`,`) → navigate to the relevant section and enter:
 - **GitHub token** — personal access token with `repo` + `read:user` scope
-- **Linear API key** — from your Linear settings → API
+- **Linear API key** — from Linear settings → API
+- **Calendar iCal URL** — the "secret address in iCal format" from your calendar provider
+
+For Google Calendar: Settings → the calendar → "Secret address in iCal format".
 
 API keys are stored locally at `~/.termochi/integrations.json` (same approach as `gh`, `aws`, `npm`).
 
@@ -362,8 +404,9 @@ termochi prompt       # One-line status for shell prompt
 termochi prompt --compact   # Extra-short for tmux statusline
 termochi watch        # Live compact view for tmux pane
 termochi watch --interval 2  # Custom refresh interval (minutes)
-termochi commit       # AI-generated summary of today's git commits
-termochi notify-prs   # Send a desktop notification if any PRs are stuck (>48h)
+termochi commit          # AI-generated summary of today's git commits
+termochi notify-prs      # Desktop notification if any PRs are stuck (>48h)
+termochi notify-meetings # Desktop notification for meetings in the next 10 min
 ```
 
 ### `termochi commit`
@@ -385,6 +428,15 @@ Checks GitHub for open PRs with no activity for 48+ hours and sends a macOS desk
 ```bash
 # ~/Library/LaunchAgents or crontab
 0 9 * * * termochi notify-prs
+```
+
+### `termochi notify-meetings`
+
+Reads your iCal calendar and sends a desktop notification for meetings starting in the next ~10 minutes. Rings the terminal bell for NOW alerts. Requires Calendar configured in Settings.
+
+```bash
+# Run every minute via cron
+* * * * * termochi notify-meetings
 ```
 
 ---
@@ -412,8 +464,9 @@ All data lives in `~/.termochi/`:
 |------|----------|
 | `state.json` | Pet state (stats, name, species, timestamps) |
 | `ai-config.json` | AI provider + API key |
-| `integrations.json` | GitHub token, Linear key, widget preferences |
+| `integrations.json` | GitHub token, Linear key, Calendar URL, widget preferences |
 | `memory.json` | Companion memories from `/remember` |
+| `todos.json` | Todo list items |
 
 ---
 
@@ -471,6 +524,9 @@ src/
 - [x] macOS desktop notifications when PRs are stuck
 - [x] AI companion chat with persistent memory
 - [x] GitHub & Linear integration with mood impact
+- [x] Calendar integration — iCal, next meeting widget, meeting notifications
+- [x] Todo list with `/todo` command from AI chat
+- [x] Reorganized menu — pet submenu, widgets & stats in Settings
 - [ ] Second mini-game
 - [ ] Multiple companions
 - [ ] Companion export / sharing as ASCII card
