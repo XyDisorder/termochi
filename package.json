@@ -1,7 +1,7 @@
 {
   "name": "termochi",
   "version": "0.1.12",
-  "description": "A cozy terminal tamagotchi companion",
+  "description": "A virtual companion that lives in your shell — tracks your GitHub, reads your calendar, and gets sad if you ignore it.",
   "type": "module",
   "bin": {
     "termochi": "dist/cli/index.js"
