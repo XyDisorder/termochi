@@ -288,6 +288,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       {...(githubConfigured ? { onToggleGithubWidget: handleToggleGitHubWidget } : {})}
       calendarWidgetVisible={calendarWidgetVisible}
       {...(calendarConfigured ? { onToggleCalendarWidget: handleToggleCalendarWidget } : {})}
+      {...(calendarConfigured ? { calendarEvents } : {})}
       {...(nextMeeting ? { nextMeeting } : {})}
     />
   );
