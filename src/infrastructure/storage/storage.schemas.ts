@@ -36,6 +36,7 @@ export const petStateSchema = z.object({
   stats: petStatsSchema,
   traits: petTraitsSchema,
   lastActions: lastActionsSchema,
+  deathCount: z.number().optional(),
 });
 
 export type PetStateSchema = z.infer<typeof petStateSchema>;

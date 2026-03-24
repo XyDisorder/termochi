@@ -120,6 +120,12 @@ export const StatsScreen: React.FC<StatsScreenProps> = ({ pet, onBack, theme }) 
               </Box>
             )}
           </Box>
+          {(pet.deathCount ?? 0) > 0 && (
+            <Box gap={1} marginTop={0}>
+              <Text dimColor>Companions lost:</Text>
+              <Text color="red">{'💀'.repeat(Math.min(pet.deathCount ?? 0, 10))} {pet.deathCount}</Text>
+            </Box>
+          )}
         </Box>
       </Panel>
 

@@ -29,6 +29,7 @@ export interface PetState {
   stats: PetStats;
   traits: PetTraits;
   lastActions?: Partial<Record<PetAction, string>>; // ISO timestamps of last action use
+  deathCount?: number; // total times this save slot has had a pet die
 }
 
 export type ActionCheck =

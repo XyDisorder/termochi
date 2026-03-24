@@ -21,6 +21,7 @@ interface MainScreenProps {
   theme: Theme;
   onAction: (action: PetAction, scoreBonus?: number) => string;
   onNavigate: (screen: 'stats' | 'play-game' | 'feed-game' | 'settings' | 'tasks' | 'ai-chat') => void;
+  onRescue?: () => void;
   initialEvent?: PetEvent | null;
   githubSummary?: GitHubWidgetData | null;
   githubWidgetVisible?: boolean;
@@ -58,7 +59,7 @@ const FOOTER_ACTIONS: Array<{ key: string; action: PetAction; label: string }> =
 ];
 
 const PetMenuFooter: React.FC<{ pet: PetState; theme: Theme }> = ({ pet, theme }) => (
-  <Box borderStyle="single" borderColor={theme.accent} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
+  <Box borderStyle="single" borderColor={pet.stats.health < 20 ? 'red' : theme.accent} paddingX={1} marginTop={1} flexWrap="wrap" gap={2}>
     {FOOTER_ACTIONS.map(({ key, action, label }) => {
       const check: ActionCheck = canPerformAction(pet, action);
       if (check.allowed) {
@@ -78,6 +79,12 @@ const PetMenuFooter: React.FC<{ pet: PetState; theme: Theme }> = ({ pet, theme }
         </Box>
       );
     })}
+    {pet.stats.health < 20 && (
+      <Box gap={1}>
+        <Text color="red" bold>[r]</Text>
+        <Text color="red" bold>Rescue!</Text>
+      </Box>
+    )}
     <Box gap={1}>
       <Text color={theme.border} bold>[esc]</Text>
       <Text>back</Text>
@@ -174,7 +181,7 @@ const TOTAL_FRAMES = 5;
 const STAT_ANIM_DURATION = 900;
 const STAT_ANIM_STEPS = 30;
 
-export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, initialEvent, githubSummary, githubWidgetVisible, calendarWidgetVisible, calendarEvents, nextMeeting }) => {
+export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, onNavigate, onRescue, initialEvent, githubSummary, githubWidgetVisible, calendarWidgetVisible, calendarEvents, nextMeeting }) => {
   const { exit } = useApp();
   const [flashMessage, setFlashMessage] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -299,6 +306,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
       else if (input === 's') triggerAction('sleep');
       else if (input === 'c') triggerAction('clean');
       else if (input === 'h') triggerAction('heal');
+      else if (input === 'r' && onRescue && pet.stats.health < 20) onRescue();
       else if (key.escape || input === 'm') setPetMenuOpen(false);
       return;
     }
@@ -400,11 +408,15 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
           </Box>
         </Box>
 
-        {/* Mood message */}
+        {/* Mood message / critical warning */}
         <Box marginTop={1}>
-          <Text dimColor>
-            {isAnimating && currentFrame ? currentFrame.text : moodMessage}
-          </Text>
+          {pet.stats.health < 20 && !isAnimating ? (
+            <Text color="red" bold>💀 Critical! Press [m] then [r] to attempt rescue!</Text>
+          ) : (
+            <Text dimColor>
+              {isAnimating && currentFrame ? currentFrame.text : moodMessage}
+            </Text>
+          )}
         </Box>
 
         {/* Footer info */}

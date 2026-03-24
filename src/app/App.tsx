@@ -19,6 +19,7 @@ import { FeedGameScreen } from '../ui/screens/FeedGameScreen.js';
 import { SettingsScreen } from '../ui/screens/SettingsScreen.js';
 import { TasksScreen } from '../ui/screens/TasksScreen.js';
 import { AiChatScreen } from '../ui/screens/AiChatScreen.js';
+import { RescueGameScreen } from '../ui/screens/RescueGameScreen.js';
 
 export interface NextMeeting {
   title: string;
@@ -40,7 +41,8 @@ export type AppScreen =
   | 'feed-game'
   | 'settings'
   | 'tasks'
-  | 'ai-chat';
+  | 'ai-chat'
+  | 'rescue-game';
 
 interface AppProps {
   initialPet: PetState | null;
@@ -53,6 +55,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const [isOnboarding, setIsOnboarding] = useState(initialPet === null);
   const [settingsReturnScreen, setSettingsReturnScreen] = useState<AppScreen>('main');
   const [statsReturnScreen, setStatsReturnScreen] = useState<AppScreen>('main');
+  const [pendingDeathCount, setPendingDeathCount] = useState(initialPet?.deathCount ?? 0);
   const [githubSummary, setGithubSummary] = useState<GitHubWidgetData | null>(null);
   const [githubWidgetVisible, setGithubWidgetVisible] = useState(false);
   const [githubConfigured, setGithubConfigured] = useState(false);
@@ -62,10 +65,11 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   const [calendarWidgetVisible, setCalendarWidgetVisible] = useState(false);
 
   const handleOnboardingComplete = useCallback((newPet: PetState) => {
-    storage.write(newPet);
-    setPet(newPet);
+    const withHistory = { ...newPet, deathCount: pendingDeathCount };
+    storage.write(withHistory);
+    setPet(withHistory);
     setIsOnboarding(false);
-  }, []);
+  }, [pendingDeathCount]);
 
   // Fetch GitHub summary on mount + refresh every 5 minutes
   useEffect(() => {
@@ -212,6 +216,31 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
     [handleAction]
   );
 
+  const handleRescueWin = useCallback(() => {
+    setPet((prev) => {
+      if (!prev) return prev;
+      const revived = {
+        ...prev,
+        stats: { hunger: 100, energy: 100, mood: 100, cleanliness: 100, health: 100 },
+        lastSeenAt: nowISO(),
+      };
+      storage.write(revived);
+      return revived;
+    });
+    setScreen('main');
+  }, []);
+
+  const handleRescueLose = useCallback(() => {
+    setPet((prev) => {
+      const nextDeathCount = (prev?.deathCount ?? 0) + 1;
+      setPendingDeathCount(nextDeathCount);
+      return null;
+    });
+    storage.reset();
+    setScreen('main');
+    setIsOnboarding(true);
+  }, []);
+
   if (isOnboarding) {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
@@ -247,6 +276,17 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
         theme={theme}
         initialHunger={pet.stats.hunger}
         onComplete={handleFeedComplete}
+      />
+    );
+  }
+
+  if (screen === 'rescue-game') {
+    return (
+      <RescueGameScreen
+        petName={pet.name}
+        theme={theme}
+        onWin={handleRescueWin}
+        onLose={handleRescueLose}
       />
     );
   }
@@ -308,6 +348,7 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       githubSummary={githubSummary}
       githubWidgetVisible={githubWidgetVisible}
       calendarWidgetVisible={calendarWidgetVisible}
+      onRescue={() => setScreen('rescue-game')}
       {...(calendarConfigured ? { calendarEvents } : {})}
       {...(nextMeeting ? { nextMeeting } : {})}
     />
