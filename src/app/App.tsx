@@ -340,7 +340,10 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
       pet={pet}
       theme={theme}
       onAction={(action, scoreBonus) => handleAction(action, scoreBonus)}
-      onNavigate={(s: AppScreen) => setScreen(s)}
+      onNavigate={(s: AppScreen) => {
+        if (s === 'stats') setStatsReturnScreen('main');
+        setScreen(s);
+      }}
       initialEvent={initialEvent ?? null}
       githubSummary={githubSummary}
       githubWidgetVisible={githubWidgetVisible}

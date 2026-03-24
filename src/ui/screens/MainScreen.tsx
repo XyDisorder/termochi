@@ -116,6 +116,10 @@ const MainFooter: React.FC<{
       </Box>
     )}
     <Box gap={1}>
+      <Text color={theme.border} bold>[i]</Text>
+      <Text>Stats</Text>
+    </Box>
+    <Box gap={1}>
       <Text color={theme.border} bold>[,]</Text>
       <Text>Settings</Text>
     </Box>
@@ -315,6 +319,7 @@ export const MainScreen: React.FC<MainScreenProps> = ({ pet, theme, onAction, on
     else if (input === 'a') onNavigate('ai-chat');
     else if (input === 't') onNavigate('tasks');
     else if (key.return && nextMeeting?.url) spawn('open', [nextMeeting.url], { detached: true, stdio: 'ignore' }).unref();
+    else if (input === 'i') onNavigate('stats');
     else if (input === ',') onNavigate('settings');
     else if (input === 'q' || key.escape) exit();
   });
