@@ -1,6 +1,6 @@
 {
   "name": "termochi",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "A virtual companion that lives in your shell — tracks your GitHub, reads your calendar, and gets sad if you ignore it.",
   "type": "module",
   "bin": {
