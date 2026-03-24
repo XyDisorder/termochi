@@ -231,13 +231,10 @@ export const App: React.FC<AppProps> = ({ initialPet, initialEvent }) => {
   }, []);
 
   const handleRescueLose = useCallback(() => {
-    setPet((prev) => {
-      const nextDeathCount = (prev?.deathCount ?? 0) + 1;
-      setPendingDeathCount(nextDeathCount);
-      return null;
-    });
+    const nextDeathCount = (storage.read()?.deathCount ?? 0) + 1;
+    setPendingDeathCount(nextDeathCount);
     storage.reset();
-    setScreen('main');
+    setPet(null);
     setIsOnboarding(true);
   }, []);
 

@@ -11,11 +11,11 @@ interface CreatePetParams {
 }
 
 const BASE_STATS = {
-  hunger: 75,
-  energy: 75,
-  mood: 75,
-  cleanliness: 75,
-  health: 90,
+  hunger: 100,
+  energy: 100,
+  mood: 100,
+  cleanliness: 100,
+  health: 100,
 };
 
 const BASE_TRAITS = {
